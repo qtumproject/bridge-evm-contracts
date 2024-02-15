@@ -10,8 +10,9 @@ import {ERC721Handler} from "../handlers/ERC721Handler.sol";
 import {ERC1155Handler} from "../handlers/ERC1155Handler.sol";
 import {NativeHandler} from "../handlers/NativeHandler.sol";
 
-import {Signers} from "../utils/Signers.sol";
 import {Hashes} from "../utils/Hashes.sol";
+import {Signers} from "../utils/Signers.sol";
+import {PauseManager} from "../utils/PauseManager.sol";
 
 /**
  * @title Bridge Contract
@@ -21,16 +22,36 @@ contract Bridge is
     UUPSUpgradeable,
     Signers,
     Hashes,
+    PauseManager,
     ERC20Handler,
     ERC721Handler,
     ERC1155Handler,
     NativeHandler
 {
+    /**
+     * @dev Ensures the function is callable only by the pause manager maintainer.
+     */
+    modifier onlyPauseManagerMaintainer() override {
+        _checkOwner();
+        _;
+    }
+
+    /**
+     * @dev Ensures the function is callable only when the contract is not paused.
+     */
+    modifier onlyNotStopped()
+        override(ERC20Handler, ERC721Handler, ERC1155Handler, NativeHandler) {
+        _checkNotStopped();
+        _;
+    }
+
     function __Bridge_init(
         address[] calldata signers_,
         uint256 signaturesThreshold_
     ) external initializer {
         __Signers_init(signers_, signaturesThreshold_);
+
+        __PauseManager_init(owner());
     }
 
     /**
@@ -49,7 +70,7 @@ contract Bridge is
         uint256 txNonce_,
         ERC20BridgingType operationType_,
         bytes[] calldata signatures_
-    ) external override {
+    ) external override onlyNotStopped {
         bytes32 signHash_ = getERC20SignHash(
             token_,
             amount_,
@@ -78,7 +99,7 @@ contract Bridge is
         string calldata tokenURI_,
         ERC721BridgingType operationType_,
         bytes[] calldata signatures_
-    ) external override {
+    ) external override onlyNotStopped {
         bytes32 signHash_ = getERC721SignHash(
             token_,
             tokenId_,
@@ -109,7 +130,7 @@ contract Bridge is
         string calldata tokenURI_,
         ERC1155BridgingType operationType_,
         bytes[] calldata signatures_
-    ) external override {
+    ) external override onlyNotStopped {
         bytes32 signHash_ = getERC1155SignHash(
             token_,
             tokenId_,
@@ -137,7 +158,7 @@ contract Bridge is
         bytes32 txHash_,
         uint256 txNonce_,
         bytes[] calldata signatures_
-    ) external override {
+    ) external override onlyNotStopped {
         bytes32 signHash_ = getNativeSignHash(
             amount_,
             receiver_,
@@ -157,5 +178,13 @@ contract Bridge is
      */
     function addHash(bytes32 txHash_, uint256 txNonce_) external onlyOwner {
         _checkAndUpdateHashes(txHash_, txNonce_);
+    }
+
+    function _checkOwner() internal view {
+        require(owner() == _msgSender(), "Bridge: caller is not the owner");
+    }
+
+    function _checkNotStopped() internal view {
+        require(!paused(), "Bridge: operations are not allowed while paused");
     }
 }
