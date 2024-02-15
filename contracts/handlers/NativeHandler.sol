@@ -7,6 +7,10 @@ import {INativeHandler} from "../interfaces/handlers/INativeHandler.sol";
  * @title NativeHandler
  */
 abstract contract NativeHandler is INativeHandler {
+    modifier onlyNotStopped() virtual {
+        _;
+    }
+
     receive() external payable {}
 
     /**
@@ -15,7 +19,7 @@ abstract contract NativeHandler is INativeHandler {
     function depositNative(
         string calldata receiver_,
         string calldata network_
-    ) external payable override {
+    ) external payable override onlyNotStopped {
         require(msg.value > 0, "NativeHandler: zero value");
 
         emit DepositedNative(msg.value, receiver_, network_);

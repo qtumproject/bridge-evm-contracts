@@ -53,6 +53,9 @@ const config: HardhatUserConfig = {
       accounts: privateKey(),
       gasMultiplier: 1.2,
     },
+    qtumTestnet: {
+      url: `https://testnet.qnode.qtum.info/v1/${process.env.QTUM_API_KEY}`,
+    },
   },
   solidity: {
     version: "0.8.9",

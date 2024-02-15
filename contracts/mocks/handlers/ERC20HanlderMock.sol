@@ -9,7 +9,7 @@ contract ERC20HandlerMock is ERC20Handler {
         uint256 amount_,
         address receiver_,
         ERC20BridgingType operationType_
-    ) external {
+    ) external onlyNotStopped {
         _withdrawERC20(token_, amount_, receiver_, operationType_);
     }
 }
