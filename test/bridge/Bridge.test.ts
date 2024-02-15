@@ -80,6 +80,14 @@ describe("Bridge", () => {
         "Ownable: caller is not the owner",
       );
     });
+
+    it("should set the pause manager only by the owner", async () => {
+      await expect(bridge.connect(SECOND).setPauseManager(OWNER.address)).to.be.rejectedWith(
+        "Bridge: caller is not the owner",
+      );
+
+      await bridge.connect(OWNER).setPauseManager(SECOND.address);
+    });
   });
 
   describe("ERC20 flow", () => {
@@ -114,6 +122,26 @@ describe("Bridge", () => {
 
       expect(await bridge.usedHashes(hash)).to.be.true;
     });
+
+    it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
+      await bridge.connect(OWNER).pause();
+
+      await expect(
+        bridge.depositERC20(await erc20.getAddress(), baseBalance, "receiver", "kovan", ERC20BridgingType.Wrapped),
+      ).to.be.rejectedWith("Bridge: operations are not allowed while paused");
+
+      await expect(
+        bridge.withdrawERC20(
+          await erc20.getAddress(),
+          baseBalance,
+          OWNER,
+          txHash,
+          txNonce,
+          ERC20BridgingType.Wrapped,
+          [],
+        ),
+      ).to.be.rejectedWith("Bridge: operations are not allowed while paused");
+    });
   });
 
   describe("ERC721 flow", () => {
@@ -146,6 +174,27 @@ describe("Bridge", () => {
 
       expect(await erc721.ownerOf(baseId)).to.equal(OWNER.address);
       expect(await erc721.tokenURI(baseId)).to.equal(tokenURI);
+    });
+
+    it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
+      await bridge.connect(OWNER).pause();
+
+      await expect(
+        bridge.depositERC721(await erc721.getAddress(), baseId, "receiver", "kovan", ERC20BridgingType.Wrapped),
+      ).to.be.rejectedWith("Bridge: operations are not allowed while paused");
+
+      await expect(
+        bridge.withdrawERC721(
+          await erc721.getAddress(),
+          baseId,
+          OWNER,
+          txHash,
+          txNonce,
+          tokenURI,
+          ERC20BridgingType.Wrapped,
+          [],
+        ),
+      ).to.be.rejectedWith("Bridge: operations are not allowed while paused");
     });
   });
 
@@ -189,6 +238,35 @@ describe("Bridge", () => {
       expect(await erc1155.balanceOf(OWNER, baseId)).to.equal(baseBalance);
       expect(await bridge.usedHashes(hash)).to.be.true;
     });
+
+    it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
+      await bridge.connect(OWNER).pause();
+
+      await expect(
+        bridge.depositERC1155(
+          await erc1155.getAddress(),
+          baseId,
+          baseBalance,
+          "receiver",
+          "kovan",
+          ERC20BridgingType.Wrapped,
+        ),
+      ).to.be.rejectedWith("Bridge: operations are not allowed while paused");
+
+      await expect(
+        bridge.withdrawERC1155(
+          await erc1155.getAddress(),
+          baseId,
+          baseBalance,
+          OWNER,
+          txHash,
+          txNonce,
+          tokenURI,
+          ERC20BridgingType.Wrapped,
+          [],
+        ),
+      ).to.be.rejectedWith("Bridge: operations are not allowed while paused");
+    });
   });
 
   describe("Native flow", () => {
@@ -207,6 +285,18 @@ describe("Bridge", () => {
 
       expect(await ethers.provider.getBalance(await bridge.getAddress())).to.equal(0);
       expect(await bridge.usedHashes(hash)).to.be.true;
+    });
+
+    it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
+      await bridge.connect(OWNER).pause();
+
+      await expect(bridge.depositNative("receiver", "kovan", { value: baseBalance })).to.be.rejectedWith(
+        "Bridge: operations are not allowed while paused",
+      );
+
+      await expect(bridge.withdrawNative(baseBalance, OWNER, txHash, txNonce, [])).to.be.rejectedWith(
+        "Bridge: operations are not allowed while paused",
+      );
     });
   });
 

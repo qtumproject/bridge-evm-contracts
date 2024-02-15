@@ -13,6 +13,10 @@ import {IERC20MintableBurnable} from "../interfaces/tokens/IERC20MintableBurnabl
 abstract contract ERC20Handler is IERC20Handler {
     using SafeERC20 for IERC20MintableBurnable;
 
+    modifier onlyNotStopped() virtual {
+        _;
+    }
+
     /**
      * @inheritdoc IERC20Handler
      */
@@ -22,7 +26,7 @@ abstract contract ERC20Handler is IERC20Handler {
         string calldata receiver_,
         string calldata network_,
         ERC20BridgingType operationType_
-    ) external override {
+    ) external override onlyNotStopped {
         require(token_ != address(0), "ERC20Handler: zero token");
         require(amount_ > 0, "ERC20Handler: amount is zero");
 

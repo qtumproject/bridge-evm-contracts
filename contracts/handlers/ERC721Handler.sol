@@ -10,6 +10,10 @@ import {IERC721MintableBurnable} from "../interfaces/tokens/IERC721MintableBurna
  * @title ERC721Handler
  */
 abstract contract ERC721Handler is IERC721Handler, ERC721Holder {
+    modifier onlyNotStopped() virtual {
+        _;
+    }
+
     /**
      * @inheritdoc IERC721Handler
      */
@@ -19,7 +23,7 @@ abstract contract ERC721Handler is IERC721Handler, ERC721Holder {
         string calldata receiver_,
         string calldata network_,
         ERC721BridgingType operationType_
-    ) external override {
+    ) external override onlyNotStopped {
         require(token_ != address(0), "ERC721Handler: zero token");
 
         IERC721MintableBurnable erc721_ = IERC721MintableBurnable(token_);

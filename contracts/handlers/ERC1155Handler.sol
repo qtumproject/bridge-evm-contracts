@@ -10,6 +10,10 @@ import {IERC1155MintableBurnable} from "../interfaces/tokens/IERC1155MintableBur
  * @title ERC1155Handler
  */
 abstract contract ERC1155Handler is IERC1155Handler, ERC1155Holder {
+    modifier onlyNotStopped() virtual {
+        _;
+    }
+
     /**
      * @inheritdoc IERC1155Handler
      */
@@ -20,7 +24,7 @@ abstract contract ERC1155Handler is IERC1155Handler, ERC1155Holder {
         string calldata receiver_,
         string calldata network_,
         ERC1155BridgingType operationType_
-    ) external override {
+    ) external override onlyNotStopped {
         require(token_ != address(0), "ERC1155Handler: zero token");
         require(amount_ > 0, "ERC1155Handler: amount is zero");
 
