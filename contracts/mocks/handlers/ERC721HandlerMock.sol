@@ -10,7 +10,7 @@ contract ERC721HandlerMock is ERC721Handler {
         address receiver_,
         string calldata tokenURI_,
         ERC721BridgingType operationType_
-    ) external {
+    ) external onlyNotStopped {
         _withdrawERC721(token_, tokenId_, receiver_, tokenURI_, operationType_);
     }
 }

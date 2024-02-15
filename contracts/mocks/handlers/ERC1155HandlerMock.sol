@@ -11,7 +11,7 @@ contract ERC1155HandlerMock is ERC1155Handler {
         address receiver_,
         string calldata tokenURI_,
         ERC1155BridgingType operationType_
-    ) external {
+    ) external onlyNotStopped {
         _withdrawERC1155(token_, tokenId_, amount_, receiver_, tokenURI_, operationType_);
     }
 }
