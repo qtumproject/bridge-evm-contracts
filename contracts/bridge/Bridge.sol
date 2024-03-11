@@ -45,6 +45,13 @@ contract Bridge is
         _;
     }
 
+    /**
+     * @dev Disables the ability to call initializers.
+     */
+    constructor() {
+        _disableInitializers();
+    }
+
     function __Bridge_init(
         address[] calldata signers_,
         uint256 signaturesThreshold_
