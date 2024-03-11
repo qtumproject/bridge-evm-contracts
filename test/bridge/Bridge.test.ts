@@ -11,7 +11,7 @@ import {
   Bridge,
   ERC721MintableBurnable,
   ERC1155MintableBurnable,
-  Bridge__factory
+  Bridge__factory,
 } from "@ethers-v6";
 
 describe("Bridge", () => {
