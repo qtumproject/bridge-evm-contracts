@@ -107,6 +107,14 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
         return keccak256(abi.encodePacked(functionData_, nonce_, contract_, chainId_));
     }
 
+    /**
+     * @notice Returns the current nonce for `ProtectedFunction`. This value must be
+     * included whenever a signature is generated.
+     */
+    function nonces(bytes32 functionData_) public view virtual returns (uint256) {
+        return _nonces[functionData_].current();
+    }
+
     function _addSigners(address[] calldata signers_) private {
         for (uint256 i = 0; i < signers_.length; i++) {
             require(signers_[i] != address(0), "Signers: zero signer");
@@ -157,14 +165,6 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
         } else {
             require(msg.sender == owner(), "Ownable: caller is not the owner");
         }
-    }
-
-    /**
-     * @notice Returns the current nonce for `ProtectedFunction`. This value must be
-     * included whenever a signature is generated.
-     */
-    function nonces(bytes32 functionData_) public view virtual returns (uint256) {
-        return _nonces[functionData_].current();
     }
 
     /**

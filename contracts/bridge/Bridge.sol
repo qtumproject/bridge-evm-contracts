@@ -26,7 +26,7 @@ contract Bridge is
     NativeHandler
 {
     /**
-     * @dev Ensures the function is callable only by the pause manager maintainer.
+     * @inheritdoc PauseManager
      */
     modifier onlyPauseManagerMaintainer(bytes32 functionData_, bytes[] calldata signatures_)
         override {
@@ -34,6 +34,9 @@ contract Bridge is
         _;
     }
 
+    /**
+     * @inheritdoc PauseManager
+     */
     modifier onlyPauseManager(bytes32 functionData_, bytes[] calldata signatures_) override {
         if (pauseManager() != address(0)) {
             _checkPauseManager();
