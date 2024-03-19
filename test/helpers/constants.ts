@@ -15,6 +15,7 @@ export enum ERC1155BridgingType {
 }
 
 export enum ProtectedFunction {
+  None,
   AddHash,
   BridgeUpgrade,
   SetPauseManager,
