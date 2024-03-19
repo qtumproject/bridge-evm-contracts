@@ -8,10 +8,8 @@ import {IBridge} from "../../interfaces/bridge/IBridge.sol";
 import {PauseManager} from "../../utils/PauseManager.sol";
 
 contract PauseManagerMock is PauseManager, OwnableUpgradeable {
-    modifier onlyPauseManagerMaintainer(
-        IBridge.ProtectedFunction functionType_,
-        bytes[] calldata signatures_
-    ) override {
+    modifier onlyPauseManagerMaintainer(bytes32 functionData_, bytes[] calldata signatures_)
+        override {
         _checkOwner();
         _;
     }
@@ -35,11 +33,7 @@ contract PauseManagerMockCoverage is PauseManager {
     function __PauseManagerMock_init(
         address initialOwner_,
         bytes[] calldata signatures_
-    )
-        public
-        initializer
-        onlyPauseManagerMaintainer(IBridge.ProtectedFunction.AddHash, signatures_)
-    {
+    ) public initializer onlyPauseManagerMaintainer(bytes32(0), signatures_) {
         __PauseManager_init(initialOwner_);
     }
 }

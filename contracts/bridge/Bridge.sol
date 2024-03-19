@@ -28,11 +28,9 @@ contract Bridge is
     /**
      * @dev Ensures the function is callable only by the pause manager maintainer.
      */
-    modifier onlyPauseManagerMaintainer(
-        IBridge.ProtectedFunction functionType_,
-        bytes[] calldata signatures_
-    ) override {
-        _checkOwnerOrSignatures(functionType_, signatures_);
+    modifier onlyPauseManagerMaintainer(bytes32 functionData_, bytes[] calldata signatures_)
+        override {
+        _checkOwnerOrSignatures(functionData_, signatures_);
         _;
     }
 
@@ -69,7 +67,13 @@ contract Bridge is
     function _authorizeUpgrade(
         address newImplementation,
         bytes[] calldata signatures_
-    ) internal override onlyOwnerOrSigners(ProtectedFunction.BridgeUpgrade, signatures_) {}
+    ) internal override {
+        bytes32 functionData_ = keccak256(
+            abi.encodePacked(IBridge.ProtectedFunction.BridgeUpgrade, newImplementation)
+        );
+
+        _checkOwnerOrSignatures(functionData_, signatures_);
+    }
 
     /**
      * @inheritdoc IBridge
@@ -188,11 +192,13 @@ contract Bridge is
     /**
      * @notice The function to add a new hash
      */
-    function addHash(
-        bytes32 txHash_,
-        uint256 txNonce_,
-        bytes[] calldata signatures_
-    ) external onlyOwnerOrSigners(ProtectedFunction.AddHash, signatures_) {
+    function addHash(bytes32 txHash_, uint256 txNonce_, bytes[] calldata signatures_) external {
+        bytes32 functionData_ = keccak256(
+            abi.encodePacked(IBridge.ProtectedFunction.AddHash, txHash_, txNonce_)
+        );
+
+        _checkOwnerOrSignatures(functionData_, signatures_);
+
         _checkAndUpdateHashes(txHash_, txNonce_);
     }
 

@@ -59,14 +59,23 @@ describe("Upgradeable", () => {
     await proxyBridge.addSigners([OWNER.address, SECOND.address], []);
     await proxyBridge.toggleSignersMode(true, []);
 
+    const functionData = ethers.solidityPackedKeccak256(
+      ["uint8", "address"],
+      [ProtectedFunction.BridgeUpgrade, await newBridge.getAddress()],
+    );
+
     const signHash = await proxyBridge.getFunctionSignHash(
-      ProtectedFunction.BridgeUpgrade,
-      await proxyBridge.nonces(ProtectedFunction.BridgeUpgrade),
+      functionData,
+      await proxyBridge.nonces(functionData),
       await proxyBridge.getAddress(),
       (await ethers.provider.getNetwork()).chainId,
     );
 
     const signature = await getSignature(OWNER, signHash);
+
+    await expect(proxyBridge.upgradeToWithSig(await proxyBridge.getAddress(), [signature])).to.be.rejectedWith(
+      "Signers: invalid signer",
+    );
 
     await proxyBridge.upgradeToWithSig(await newBridge.getAddress(), [signature]);
   });

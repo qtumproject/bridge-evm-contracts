@@ -320,9 +320,14 @@ describe("Bridge", () => {
 
       await expect(bridge.addHash(txHash, txNonce, [])).to.be.rejectedWith("Signers: threshold is not met");
 
+      const functionData = ethers.solidityPackedKeccak256(
+        ["uint8", "bytes32", "uint256"],
+        [ProtectedFunction.AddHash, txHash, txNonce],
+      );
+
       const signHash = await bridge.getFunctionSignHash(
-        ProtectedFunction.AddHash,
-        await bridge.nonces(ProtectedFunction.AddHash),
+        functionData,
+        await bridge.nonces(functionData),
         await bridge.getAddress(),
         (await ethers.provider.getNetwork()).chainId,
       );
@@ -340,9 +345,14 @@ describe("Bridge", () => {
 
     await expect(bridge.setPauseManager(OWNER.address, [])).to.be.rejectedWith("Signers: threshold is not met");
 
+    const functionData = ethers.solidityPackedKeccak256(
+      ["uint8", "address"],
+      [ProtectedFunction.SetPauseManager, OWNER.address],
+    );
+
     const signHash = await bridge.getFunctionSignHash(
-      ProtectedFunction.SetPauseManager,
-      await bridge.nonces(ProtectedFunction.SetPauseManager),
+      functionData,
+      await bridge.nonces(functionData),
       await bridge.getAddress(),
       (await ethers.provider.getNetwork()).chainId,
     );

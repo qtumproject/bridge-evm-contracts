@@ -29,10 +29,8 @@ abstract contract PauseManager is PausableUpgradeable {
     /**
      * @notice Modifier to make a function callable only by the pause manager maintainer.
      */
-    modifier onlyPauseManagerMaintainer(
-        IBridge.ProtectedFunction functionType_,
-        bytes[] calldata signatures_
-    ) virtual {
+    modifier onlyPauseManagerMaintainer(bytes32 functionData_, bytes[] calldata signatures_)
+        virtual {
         _;
     }
 
@@ -81,7 +79,13 @@ abstract contract PauseManager is PausableUpgradeable {
     function setPauseManager(
         address newManager_,
         bytes[] calldata signatures_
-    ) public onlyPauseManagerMaintainer(IBridge.ProtectedFunction.SetPauseManager, signatures_) {
+    )
+        public
+        onlyPauseManagerMaintainer(
+            keccak256(abi.encodePacked(IBridge.ProtectedFunction.SetPauseManager, newManager_)),
+            signatures_
+        )
+    {
         require(newManager_ != address(0), "PauseManager: zero address");
 
         _setPauseManager(newManager_);

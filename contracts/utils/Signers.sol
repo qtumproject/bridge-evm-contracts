@@ -22,15 +22,7 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
 
     EnumerableSet.AddressSet internal _signers;
 
-    mapping(IBridge.ProtectedFunction => Counters.Counter) private _nonces;
-
-    modifier onlyOwnerOrSigners(
-        IBridge.ProtectedFunction functionType_,
-        bytes[] calldata signatures_
-    ) {
-        _checkOwnerOrSignatures(functionType_, signatures_);
-        _;
-    }
+    mapping(bytes32 => Counters.Counter) private _nonces;
 
     /**
      * @dev This empty reserved space is put in place to allow future versions to add new
@@ -55,32 +47,50 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
     function setSignaturesThreshold(
         uint256 signaturesThreshold_,
         bytes[] calldata signatures_
-    ) public onlyOwnerOrSigners(IBridge.ProtectedFunction.SetSignersThreshold, signatures_) {
+    ) public {
+        bytes32 functionData_ = keccak256(
+            abi.encodePacked(
+                IBridge.ProtectedFunction.SetSignaturesThreshold,
+                signaturesThreshold_
+            )
+        );
+
+        _checkOwnerOrSignatures(functionData_, signatures_);
+
         require(signaturesThreshold_ > 0, "Signers: invalid threshold");
 
         signaturesThreshold = signaturesThreshold_;
     }
 
-    function addSigners(
-        address[] calldata signers_,
-        bytes[] calldata signatures_
-    ) public onlyOwnerOrSigners(IBridge.ProtectedFunction.AddSigners, signatures_) {
+    function addSigners(address[] calldata signers_, bytes[] calldata signatures_) public {
+        bytes32 functionData_ = keccak256(
+            abi.encodePacked(IBridge.ProtectedFunction.AddSigners, signers_)
+        );
+
+        _checkOwnerOrSignatures(functionData_, signatures_);
+
         _addSigners(signers_);
     }
 
-    function removeSigners(
-        address[] calldata signers_,
-        bytes[] calldata signatures_
-    ) public onlyOwnerOrSigners(IBridge.ProtectedFunction.RemoveSigners, signatures_) {
+    function removeSigners(address[] calldata signers_, bytes[] calldata signatures_) public {
+        bytes32 functionData_ = keccak256(
+            abi.encodePacked(IBridge.ProtectedFunction.RemoveSigners, signers_)
+        );
+
+        _checkOwnerOrSignatures(functionData_, signatures_);
+
         for (uint256 i = 0; i < signers_.length; i++) {
             _signers.remove(signers_[i]);
         }
     }
 
-    function toggleSignersMode(
-        bool isSignersMode_,
-        bytes[] calldata signatures_
-    ) public onlyOwnerOrSigners(IBridge.ProtectedFunction.ToggleSignersMode, signatures_) {
+    function toggleSignersMode(bool isSignersMode_, bytes[] calldata signatures_) public {
+        bytes32 functionData_ = keccak256(
+            abi.encodePacked(IBridge.ProtectedFunction.ToggleSignersMode, isSignersMode_)
+        );
+
+        _checkOwnerOrSignatures(functionData_, signatures_);
+
         isSignersMode = isSignersMode_;
     }
 
@@ -89,12 +99,12 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
     }
 
     function getFunctionSignHash(
-        IBridge.ProtectedFunction functionType_,
+        bytes32 functionData_,
         uint256 nonce_,
         address contract_,
         uint256 chainId_
     ) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(functionType_, nonce_, contract_, chainId_));
+        return keccak256(abi.encodePacked(functionData_, nonce_, contract_, chainId_));
     }
 
     function _addSigners(address[] calldata signers_) private {
@@ -132,13 +142,13 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
     }
 
     function _checkOwnerOrSignatures(
-        IBridge.ProtectedFunction functionType_,
+        bytes32 functionData_,
         bytes[] calldata signatures_
     ) internal {
         if (isSignersMode) {
             bytes32 signHash_ = getFunctionSignHash(
-                functionType_,
-                _useNonce(functionType_),
+                functionData_,
+                _useNonce(functionData_),
                 address(this),
                 block.chainid
             );
@@ -153,19 +163,15 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
      * @notice Returns the current nonce for `ProtectedFunction`. This value must be
      * included whenever a signature is generated.
      */
-    function nonces(
-        IBridge.ProtectedFunction functionType_
-    ) public view virtual returns (uint256) {
-        return _nonces[functionType_].current();
+    function nonces(bytes32 functionData_) public view virtual returns (uint256) {
+        return _nonces[functionData_].current();
     }
 
     /**
      * @notice "Consume a nonce": return the current value and increment.
      */
-    function _useNonce(
-        IBridge.ProtectedFunction functionType_
-    ) internal virtual returns (uint256 current) {
-        Counters.Counter storage nonce = _nonces[functionType_];
+    function _useNonce(bytes32 functionData_) internal virtual returns (uint256 current) {
+        Counters.Counter storage nonce = _nonces[functionData_];
         current = nonce.current();
         nonce.increment();
     }
