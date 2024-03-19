@@ -6,7 +6,13 @@ import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 import { wei } from "@scripts";
 import { ERC20BridgingType, getSignature, Reverter } from "@test-helpers";
 
-import { ERC20MintableBurnable, Bridge, ERC721MintableBurnable, ERC1155MintableBurnable } from "@ethers-v6";
+import {
+  ERC20MintableBurnable,
+  Bridge,
+  ERC721MintableBurnable,
+  ERC1155MintableBurnable,
+  Bridge__factory,
+} from "@ethers-v6";
 
 describe("Bridge", () => {
   const reverter = new Reverter();
@@ -33,6 +39,12 @@ describe("Bridge", () => {
     const Bridge = await ethers.getContractFactory("Bridge");
 
     bridge = await Bridge.deploy();
+
+    const Proxy = await ethers.getContractFactory("ERC1967Proxy");
+    const proxy = await Proxy.deploy(await bridge.getAddress(), "0x");
+
+    bridge = Bridge.attach(await proxy.getAddress()) as Bridge;
+
     await bridge.__Bridge_init([OWNER.address], "1");
 
     const ERC20MB = await ethers.getContractFactory("ERC20MintableBurnable");
