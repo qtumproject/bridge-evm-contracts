@@ -22,6 +22,7 @@ import {INativeHandler} from "../handlers/INativeHandler.sol";
  */
 interface IBridge is IERC20Handler, IERC721Handler, IERC1155Handler, INativeHandler {
     enum ProtectedFunction {
+        None,
         AddHash,
         BridgeUpgrade,
         SetPauseManager,
