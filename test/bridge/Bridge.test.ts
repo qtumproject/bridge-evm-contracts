@@ -130,7 +130,7 @@ describe("Bridge", () => {
     });
 
     it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
-      await bridge.connect(OWNER).pause();
+      await bridge.connect(OWNER).pause([]);
 
       await expect(
         bridge.depositERC20(await erc20.getAddress(), baseBalance, "receiver", "kovan", ERC20BridgingType.Wrapped),
@@ -183,7 +183,7 @@ describe("Bridge", () => {
     });
 
     it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
-      await bridge.connect(OWNER).pause();
+      await bridge.connect(OWNER).pause([]);
 
       await expect(
         bridge.depositERC721(await erc721.getAddress(), baseId, "receiver", "kovan", ERC20BridgingType.Wrapped),
@@ -246,7 +246,7 @@ describe("Bridge", () => {
     });
 
     it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
-      await bridge.connect(OWNER).pause();
+      await bridge.connect(OWNER).pause([]);
 
       await expect(
         bridge.depositERC1155(
@@ -294,7 +294,7 @@ describe("Bridge", () => {
     });
 
     it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
-      await bridge.connect(OWNER).pause();
+      await bridge.connect(OWNER).pause([]);
 
       await expect(bridge.depositNative("receiver", "kovan", { value: baseBalance })).to.be.rejectedWith(
         "Bridge: operations are not allowed while paused",
@@ -340,29 +340,70 @@ describe("Bridge", () => {
     });
   });
 
-  it("should set the pause manager and emit 'PauseManagerChanged' event with signers", async () => {
-    await bridge.toggleSignersMode(true, []);
+  describe("PauseManager", () => {
+    it("should set the pause manager and emit 'PauseManagerChanged' event with signers", async () => {
+      await bridge.toggleSignersMode(true, []);
 
-    await expect(bridge.setPauseManager(OWNER.address, [])).to.be.rejectedWith("Signers: threshold is not met");
+      await expect(bridge.setPauseManager(OWNER.address, [])).to.be.rejectedWith("Signers: threshold is not met");
 
-    const functionData = ethers.solidityPackedKeccak256(
-      ["uint8", "address"],
-      [ProtectedFunction.SetPauseManager, OWNER.address],
-    );
+      const functionData = ethers.solidityPackedKeccak256(
+        ["uint8", "address"],
+        [ProtectedFunction.SetPauseManager, OWNER.address],
+      );
 
-    const signHash = await bridge.getFunctionSignHash(
-      functionData,
-      await bridge.nonces(functionData),
-      await bridge.getAddress(),
-      (await ethers.provider.getNetwork()).chainId,
-    );
+      const signHash = await bridge.getFunctionSignHash(
+        functionData,
+        await bridge.nonces(functionData),
+        await bridge.getAddress(),
+        (await ethers.provider.getNetwork()).chainId,
+      );
 
-    const signature = await getSignature(OWNER, signHash);
+      const signature = await getSignature(OWNER, signHash);
 
-    await expect(bridge.setPauseManager(OWNER.address, [signature]))
-      .to.emit(bridge, "PauseManagerChanged")
-      .withArgs(OWNER.address);
+      await expect(bridge.setPauseManager(OWNER.address, [signature]))
+        .to.emit(bridge, "PauseManagerChanged")
+        .withArgs(OWNER.address);
 
-    expect(await bridge.pauseManager()).to.equal(OWNER.address);
+      expect(await bridge.pauseManager()).to.equal(OWNER.address);
+    });
+
+    it("should be able to set the signers as a pause manager and call pause/unpause", async () => {
+      await bridge.setPauseManager(ethers.ZeroAddress, []);
+      await bridge.toggleSignersMode(true, []);
+
+      let functionData = ethers.solidityPackedKeccak256(["uint8"], [ProtectedFunction.Pause]);
+
+      let signHash = await bridge.getFunctionSignHash(
+        functionData,
+        await bridge.nonces(functionData),
+        await bridge.getAddress(),
+        (await ethers.provider.getNetwork()).chainId,
+      );
+
+      let signature = await getSignature(OWNER, signHash);
+
+      await expect(bridge.pause([])).to.be.rejectedWith("Signers: threshold is not met");
+
+      await bridge.pause([signature]);
+
+      expect(await bridge.paused()).to.be.true;
+
+      await expect(bridge.unpause([signature])).to.be.rejectedWith("Signers: invalid signer");
+
+      functionData = ethers.solidityPackedKeccak256(["uint8"], [ProtectedFunction.Unpause]);
+
+      signHash = await bridge.getFunctionSignHash(
+        functionData,
+        await bridge.nonces(functionData),
+        await bridge.getAddress(),
+        (await ethers.provider.getNetwork()).chainId,
+      );
+
+      signature = await getSignature(OWNER, signHash);
+
+      await bridge.unpause([signature]);
+
+      expect(await bridge.paused()).to.be.false;
+    });
   });
 });

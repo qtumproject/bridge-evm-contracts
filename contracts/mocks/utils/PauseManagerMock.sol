@@ -14,6 +14,11 @@ contract PauseManagerMock is PauseManager, OwnableUpgradeable {
         _;
     }
 
+    modifier onlyPauseManager(bytes32 functionData_, bytes[] calldata signatures_) override {
+        _checkPauseManager();
+        _;
+    }
+
     function __PauseManagerMock_init(address initialOwner_) public initializer {
         __Ownable_init();
 
@@ -33,7 +38,12 @@ contract PauseManagerMockCoverage is PauseManager {
     function __PauseManagerMock_init(
         address initialOwner_,
         bytes[] calldata signatures_
-    ) public initializer onlyPauseManagerMaintainer(bytes32(0), signatures_) {
+    )
+        public
+        initializer
+        onlyPauseManager(bytes32(0), signatures_)
+        onlyPauseManagerMaintainer(bytes32(0), signatures_)
+    {
         __PauseManager_init(initialOwner_);
     }
 }

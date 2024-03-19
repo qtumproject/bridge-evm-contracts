@@ -34,44 +34,31 @@ describe("PauseManager", () => {
         "Initializable: contract is not initializing",
       );
     });
-
-    it("should revert if trying to initialize the contract with the zero address", async () => {
-      const PauseManagerMock = await ethers.getContractFactory("PauseManagerMock");
-      const pauseManagerMock = await PauseManagerMock.deploy();
-
-      await expect(pauseManagerMock.__PauseManagerMock_init(ethers.ZeroAddress)).to.be.rejectedWith(
-        "PauseManager: zero address",
-      );
-    });
   });
 
   describe("pause/unpause", () => {
     it("should pause the contract only by the Pause Manager", async () => {
-      await expect(pauseManagerMock.connect(OWNER).pause()).to.be.rejectedWith("PauseManager: not the pause manager");
+      await expect(pauseManagerMock.connect(OWNER).pause([])).to.be.rejectedWith("PauseManager: not the pause manager");
 
-      await pauseManagerMock.connect(PAUSER).pause();
+      await pauseManagerMock.connect(PAUSER).pause([]);
 
       expect(await pauseManagerMock.paused()).to.be.true;
     });
 
     it("should unpause the contract only by the Pause Manager", async () => {
-      await pauseManagerMock.connect(PAUSER).pause();
+      await pauseManagerMock.connect(PAUSER).pause([]);
 
-      await expect(pauseManagerMock.connect(OWNER).unpause()).to.be.rejectedWith("PauseManager: not the pause manager");
+      await expect(pauseManagerMock.connect(OWNER).unpause([])).to.be.rejectedWith(
+        "PauseManager: not the pause manager",
+      );
 
-      await pauseManagerMock.connect(PAUSER).unpause();
+      await pauseManagerMock.connect(PAUSER).unpause([]);
 
       expect(await pauseManagerMock.paused()).to.be.false;
     });
   });
 
   describe("setPauseManager", () => {
-    it("should revert if trying to set the pause manager to the zero address", async () => {
-      await expect(pauseManagerMock.connect(OWNER).setPauseManager(ethers.ZeroAddress, [])).to.be.rejectedWith(
-        "PauseManager: zero address",
-      );
-    });
-
     it("should set the pause manager and emit 'PauseManagerChanged' event", async () => {
       await expect(pauseManagerMock.connect(OWNER).setPauseManager(OWNER.address, []))
         .to.emit(pauseManagerMock, "PauseManagerChanged")

@@ -27,6 +27,8 @@ interface IBridge is IERC20Handler, IERC721Handler, IERC1155Handler, INativeHand
      */
     enum ProtectedFunction {
         None,
+        Pause,
+        Unpause,
         AddHash,
         BridgeUpgrade,
         SetPauseManager,

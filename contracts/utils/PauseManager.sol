@@ -37,8 +37,7 @@ abstract contract PauseManager is PausableUpgradeable {
     /**
      * @notice Modifier to make a function callable only by the current pause manager.
      */
-    modifier onlyPauseManager() {
-        _checkPauseManager();
+    modifier onlyPauseManager(bytes32 functionData_, bytes[] calldata signatures_) virtual {
         _;
     }
 
@@ -47,8 +46,6 @@ abstract contract PauseManager is PausableUpgradeable {
      * @param initialManager_ The address of the initial pause manager. Must not be the zero address.
      */
     function __PauseManager_init(address initialManager_) internal onlyInitializing {
-        require(initialManager_ != address(0), "PauseManager: zero address");
-
         __Pausable_init();
 
         _setPauseManager(initialManager_);
@@ -58,7 +55,12 @@ abstract contract PauseManager is PausableUpgradeable {
      * @notice Pauses the contract.
      * Can only be called by the current pause manager.
      */
-    function pause() public onlyPauseManager {
+    function pause(
+        bytes[] calldata signatures_
+    )
+        public
+        onlyPauseManager(keccak256(abi.encodePacked(IBridge.ProtectedFunction.Pause)), signatures_)
+    {
         _pause();
     }
 
@@ -66,7 +68,15 @@ abstract contract PauseManager is PausableUpgradeable {
      * @notice Unpauses the contract.
      * Can only be called by the current pause manager.
      */
-    function unpause() public onlyPauseManager {
+    function unpause(
+        bytes[] calldata signatures_
+    )
+        public
+        onlyPauseManager(
+            keccak256(abi.encodePacked(IBridge.ProtectedFunction.Unpause)),
+            signatures_
+        )
+    {
         _unpause();
     }
 
@@ -86,8 +96,6 @@ abstract contract PauseManager is PausableUpgradeable {
             signatures_
         )
     {
-        require(newManager_ != address(0), "PauseManager: zero address");
-
         _setPauseManager(newManager_);
     }
 

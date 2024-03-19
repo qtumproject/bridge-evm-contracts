@@ -34,6 +34,15 @@ contract Bridge is
         _;
     }
 
+    modifier onlyPauseManager(bytes32 functionData_, bytes[] calldata signatures_) override {
+        if (pauseManager() != address(0)) {
+            _checkPauseManager();
+        } else {
+            _checkOwnerOrSignatures(functionData_, signatures_);
+        }
+        _;
+    }
+
     /**
      * @dev Ensures the function is callable only when the contract is not paused.
      */
