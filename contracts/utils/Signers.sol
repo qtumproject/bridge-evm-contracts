@@ -16,13 +16,13 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
 
     using Counters for Counters.Counter;
 
-    mapping(IBridge.ProtectedFunction => Counters.Counter) private _nonces;
-
     uint256 public signaturesThreshold;
 
     bool public isSignersMode;
 
     EnumerableSet.AddressSet internal _signers;
+
+    mapping(IBridge.ProtectedFunction => Counters.Counter) private _nonces;
 
     modifier onlyOwnerOrSigners(
         IBridge.ProtectedFunction functionType_,
@@ -37,7 +37,7 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
      * variables without shifting down storage in the inheritance chain.
      * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
      */
-    uint256[47] private __gap;
+    uint256[46] private __gap;
 
     function __Signers_init(
         address[] calldata signers_,
