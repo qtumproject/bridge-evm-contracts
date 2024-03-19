@@ -150,11 +150,8 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
     }
 
     /**
-     * @dev Returns the current nonce for `owner`. This value must be
-     * included whenever a signature is generated for {permit}.
-     *
-     * Every successful call to {permit} increases ``owner``'s nonce by one. This
-     * prevents a signature from being used multiple times.
+     * @notice Returns the current nonce for `ProtectedFunction`. This value must be
+     * included whenever a signature is generated.
      */
     function nonces(
         IBridge.ProtectedFunction functionType_
@@ -163,7 +160,7 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
     }
 
     /**
-     * @dev "Consume a nonce": return the current value and increment.
+     * @notice "Consume a nonce": return the current value and increment.
      */
     function _useNonce(
         IBridge.ProtectedFunction functionType_
