@@ -209,6 +209,12 @@ contract Bridge is
 
     /**
      * @notice The function to add a new hash
+     * @param txHash_ The transaction hash from the other chain
+     * @param txNonce_ The nonce of the transaction from the other chain
+     * @param signatures_ The signatures of the signers; this field should be empty if the `isSignersMode` flag is set to ‘false’.
+     *
+     * @dev Depending on the `isSignersMode` flag in the `Signers` contract, this function requires
+     * either signatures from the signers or that the transaction be sent by the owner.
      */
     function addHash(bytes32 txHash_, uint256 txNonce_, bytes[] calldata signatures_) external {
         bytes32 functionData_ = keccak256(

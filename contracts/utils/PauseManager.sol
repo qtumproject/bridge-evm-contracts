@@ -54,7 +54,10 @@ abstract contract PauseManager is PausableUpgradeable {
 
     /**
      * @notice Pauses the contract.
-     * Can only be called by the current pause manager.
+     * @param signatures_ The signatures of the signers; this field should be empty if the `isSignersMode` flag is set to ‘false’ in the `Signers` contract.
+     *
+     * @dev Depending on the `isSignersMode` flag in the `Signers` contract, this function requires
+     * either signatures from the signers or that the transaction be sent by the owner or pause manager.
      */
     function pause(
         bytes[] calldata signatures_
@@ -67,7 +70,10 @@ abstract contract PauseManager is PausableUpgradeable {
 
     /**
      * @notice Unpauses the contract.
-     * Can only be called by the current pause manager.
+     * @param signatures_ The signatures of the signers; this field should be empty if the `isSignersMode` flag is set to ‘false’ in the `Signers` contract.
+     *
+     * @dev Depending on the `isSignersMode` flag in the `Signers` contract, this function requires
+     * either signatures from the signers or that the transaction be sent by the owner or pause manager.
      */
     function unpause(
         bytes[] calldata signatures_
@@ -86,6 +92,10 @@ abstract contract PauseManager is PausableUpgradeable {
      * Can only be called by a pause manager maintainer(s).
      *
      * @param newManager_ The address of the new pause manager. Must not be the zero address.
+     * @param signatures_ The signatures of the signers; this field should be empty if the `isSignersMode` flag is set to ‘false’ in the `Signers` contract.
+     *
+     * @dev Depending on the `isSignersMode` flag in the `Signers` contract, this function requires
+     * either signatures from the signers or that the transaction be sent by the owner.
      */
     function setPauseManager(
         address newManager_,

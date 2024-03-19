@@ -9,7 +9,7 @@ import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/U
  */
 abstract contract UUPSSignableUpgradeable is UUPSUpgradeable {
     /**
-     * @dev Authorizes the upgrade to a new implementation via a signature.
+     * @notice Authorizes the upgrade to a new implementation via a signature.
      */
     function _authorizeUpgrade(
         address newImplementation_,
@@ -17,7 +17,7 @@ abstract contract UUPSSignableUpgradeable is UUPSUpgradeable {
     ) internal virtual;
 
     /**
-     * @dev Upgrade the implementation of the proxy to `newImplementation`.
+     * @notice Upgrade the implementation of the proxy to `newImplementation`.
      *
      * Calls {_authorizeUpgrade} with the provided `newImplementation` and `signatures`.
      *
