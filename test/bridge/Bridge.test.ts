@@ -318,6 +318,8 @@ describe("Bridge", () => {
     it("should add hash with signers", async () => {
       await bridge.toggleSignersMode(true, []);
 
+      await expect(bridge.addHash(txHash, txNonce, [])).to.be.rejectedWith("Signers: threshold is not met");
+
       const signHash = await bridge.getFunctionSignHash(
         ProtectedFunction.AddHash,
         await bridge.nonces(ProtectedFunction.AddHash),
@@ -335,6 +337,8 @@ describe("Bridge", () => {
 
   it("should set the pause manager and emit 'PauseManagerChanged' event with signers", async () => {
     await bridge.toggleSignersMode(true, []);
+
+    await expect(bridge.setPauseManager(OWNER.address, [])).to.be.rejectedWith("Signers: threshold is not met");
 
     const signHash = await bridge.getFunctionSignHash(
       ProtectedFunction.SetPauseManager,
