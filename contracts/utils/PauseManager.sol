@@ -27,7 +27,7 @@ abstract contract PauseManager is PausableUpgradeable {
     event PauseManagerChanged(address indexed newManager);
 
     /**
-     * @notice Modifier to make a function callable only by the pause manager maintainer.
+     * @notice Modifier to make a function callable only by the pause manager maintainer(s).
      */
     modifier onlyPauseManagerMaintainer(bytes32 functionData_, bytes[] calldata signatures_)
         virtual {
@@ -72,7 +72,7 @@ abstract contract PauseManager is PausableUpgradeable {
 
     /**
      * @notice Transfers pause management to a new address.
-     * Can only be called by a pause manager maintainer.
+     * Can only be called by a pause manager maintainer(s).
      *
      * @param newManager_ The address of the new pause manager. Must not be the zero address.
      */

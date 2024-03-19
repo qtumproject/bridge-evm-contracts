@@ -60,10 +60,16 @@ contract Bridge is
         __PauseManager_init(owner());
     }
 
+    /*
+     * @inheritdoc UUPSUpgradeable
+     */
     function _authorizeUpgrade(address) internal pure override {
         revert("Bridge: this upgrade method is turned off");
     }
 
+    /*
+     * @inheritdoc UUPSSignableUpgradeable
+     */
     function _authorizeUpgrade(
         address newImplementation,
         bytes[] calldata signatures_
