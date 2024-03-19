@@ -65,14 +65,21 @@ describe("Signers", () => {
       await signers.addSigners([OWNER.address, SECOND.address], []);
       await signers.toggleSignersMode(true, []);
 
+      const functionData = ethers.solidityPackedKeccak256(
+        ["uint8", "uint256"],
+        [ProtectedFunction.SetSignersThreshold, 2],
+      );
+
       const signHash = await signers.getFunctionSignHash(
-        ProtectedFunction.SetSignersThreshold,
-        await signers.nonces(ProtectedFunction.SetSignersThreshold),
+        functionData,
+        await signers.nonces(functionData),
         await signers.getAddress(),
         (await ethers.provider.getNetwork()).chainId,
       );
 
       const signature = await getSignature(OWNER, signHash);
+
+      await expect(signers.setSignaturesThreshold(3, [signature])).to.be.rejectedWith("Signers: invalid signer");
 
       await expect(signers.setSignaturesThreshold(2, [signature])).to.be.fulfilled;
     });
@@ -97,14 +104,21 @@ describe("Signers", () => {
       await signers.addSigners([OWNER.address, SECOND.address], []);
       await signers.toggleSignersMode(true, []);
 
+      const functionData = ethers.solidityPackedKeccak256(
+        ["uint8", "bool"],
+        [ProtectedFunction.ToggleSignersMode, false],
+      );
+
       const signHash = await signers.getFunctionSignHash(
-        ProtectedFunction.ToggleSignersMode,
-        await signers.nonces(ProtectedFunction.ToggleSignersMode),
+        functionData,
+        await signers.nonces(functionData),
         await signers.getAddress(),
         (await ethers.provider.getNetwork()).chainId,
       );
 
       const signature = await getSignature(OWNER, signHash);
+
+      await expect(signers.toggleSignersMode(true, [signature])).to.be.rejectedWith("Signers: invalid signer");
 
       await expect(signers.toggleSignersMode(false, [signature])).to.be.fulfilled;
     });
@@ -129,14 +143,21 @@ describe("Signers", () => {
       await signers.addSigners([OWNER.address, SECOND.address], []);
       await signers.toggleSignersMode(true, []);
 
+      const functionData = ethers.solidityPackedKeccak256(
+        ["uint8", "address[]"],
+        [ProtectedFunction.AddSigners, [THIRD.address]],
+      );
+
       const signHash = await signers.getFunctionSignHash(
-        ProtectedFunction.AddSigners,
-        await signers.nonces(ProtectedFunction.AddSigners),
+        functionData,
+        await signers.nonces(functionData),
         await signers.getAddress(),
         (await ethers.provider.getNetwork()).chainId,
       );
 
       const signature = await getSignature(OWNER, signHash);
+
+      await expect(signers.addSigners([OWNER.address], [signature])).to.be.rejectedWith("Signers: invalid signer");
 
       await expect(signers.addSigners([THIRD.address], [signature])).to.be.fulfilled;
     });
@@ -163,14 +184,21 @@ describe("Signers", () => {
       await signers.addSigners([OWNER.address, SECOND.address, THIRD.address], []);
       await signers.toggleSignersMode(true, []);
 
+      const functionData = ethers.solidityPackedKeccak256(
+        ["uint8", "address[]"],
+        [ProtectedFunction.RemoveSigners, [OWNER.address]],
+      );
+
       const signHash = await signers.getFunctionSignHash(
-        ProtectedFunction.RemoveSigners,
-        await signers.nonces(ProtectedFunction.RemoveSigners),
+        functionData,
+        await signers.nonces(functionData),
         await signers.getAddress(),
         (await ethers.provider.getNetwork()).chainId,
       );
 
       const signature = await getSignature(OWNER, signHash);
+
+      await expect(signers.removeSigners([THIRD.address], [signature])).to.be.rejectedWith("Signers: invalid signer");
 
       await signers.removeSigners([OWNER.address], [signature]);
 
