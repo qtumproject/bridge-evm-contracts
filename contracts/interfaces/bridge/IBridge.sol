@@ -21,6 +21,16 @@ import {INativeHandler} from "../handlers/INativeHandler.sol";
  * All signer addresses must differ in their first (most significant) 8 bits in order to pass a bloom filtering.
  */
 interface IBridge is IERC20Handler, IERC721Handler, IERC1155Handler, INativeHandler {
+    enum ProtectedFunction {
+        AddHash,
+        BridgeUpgrade,
+        SetPauseManager,
+        SetSignersThreshold,
+        AddSigners,
+        RemoveSigners,
+        ToggleSignersMode
+    }
+
     /**
      * @notice Withdraws ERC20 tokens.
      * @param token_ The address of the token to withdraw.

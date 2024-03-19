@@ -67,13 +67,13 @@ describe("PauseManager", () => {
 
   describe("setPauseManager", () => {
     it("should revert if trying to set the pause manager to the zero address", async () => {
-      await expect(pauseManagerMock.connect(OWNER).setPauseManager(ethers.ZeroAddress)).to.be.rejectedWith(
+      await expect(pauseManagerMock.connect(OWNER).setPauseManager(ethers.ZeroAddress, [])).to.be.rejectedWith(
         "PauseManager: zero address",
       );
     });
 
     it("should set the pause manager and emit 'PauseManagerChanged' event", async () => {
-      await expect(pauseManagerMock.connect(OWNER).setPauseManager(OWNER.address))
+      await expect(pauseManagerMock.connect(OWNER).setPauseManager(OWNER.address, []))
         .to.emit(pauseManagerMock, "PauseManagerChanged")
         .withArgs(OWNER.address);
 
@@ -81,7 +81,7 @@ describe("PauseManager", () => {
     });
 
     it("should revert if trying to set the pause manager not by the owner", async () => {
-      await expect(pauseManagerMock.connect(PAUSER).setPauseManager(OWNER.address)).to.be.rejectedWith(
+      await expect(pauseManagerMock.connect(PAUSER).setPauseManager(OWNER.address, [])).to.be.rejectedWith(
         "PauseManagerMock: caller is not the owner",
       );
     });
@@ -92,7 +92,7 @@ describe("PauseManager", () => {
       const PauseManagerMock = await ethers.getContractFactory("PauseManagerMockCoverage");
       const pauseManagerMock = await PauseManagerMock.deploy();
 
-      await pauseManagerMock.__PauseManagerMock_init(PAUSER.address);
+      await pauseManagerMock.__PauseManagerMock_init(PAUSER.address, []);
     });
   });
 });

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
-
 import {IBridge} from "../interfaces/bridge/IBridge.sol";
 
 import {ERC20Handler} from "../handlers/ERC20Handler.sol";
@@ -10,18 +8,17 @@ import {ERC721Handler} from "../handlers/ERC721Handler.sol";
 import {ERC1155Handler} from "../handlers/ERC1155Handler.sol";
 import {NativeHandler} from "../handlers/NativeHandler.sol";
 
-import {Hashes} from "../utils/Hashes.sol";
 import {Signers} from "../utils/Signers.sol";
 import {PauseManager} from "../utils/PauseManager.sol";
+import {UUPSSignableUpgradeable} from "../utils/UUPSSignableUpgradeable.sol";
 
 /**
  * @title Bridge Contract
  */
 contract Bridge is
     IBridge,
-    UUPSUpgradeable,
+    UUPSSignableUpgradeable,
     Signers,
-    Hashes,
     PauseManager,
     ERC20Handler,
     ERC721Handler,
@@ -31,8 +28,11 @@ contract Bridge is
     /**
      * @dev Ensures the function is callable only by the pause manager maintainer.
      */
-    modifier onlyPauseManagerMaintainer() override {
-        _checkOwner();
+    modifier onlyPauseManagerMaintainer(
+        IBridge.ProtectedFunction functionType_,
+        bytes[] calldata signatures_
+    ) override {
+        _checkOwnerOrSignatures(functionType_, signatures_);
         _;
     }
 
@@ -54,17 +54,22 @@ contract Bridge is
 
     function __Bridge_init(
         address[] calldata signers_,
-        uint256 signaturesThreshold_
+        uint256 signaturesThreshold_,
+        bool isSignersMode_
     ) external initializer {
-        __Signers_init(signers_, signaturesThreshold_);
+        __Signers_init(signers_, signaturesThreshold_, isSignersMode_);
 
         __PauseManager_init(owner());
     }
 
-    /**
-     * @inheritdoc UUPSUpgradeable
-     */
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+    function _authorizeUpgrade(address) internal pure override {
+        revert("Bridge: this upgrade method is turned off");
+    }
+
+    function _authorizeUpgrade(
+        address newImplementation,
+        bytes[] calldata signatures_
+    ) internal override onlyOwnerOrSigners(ProtectedFunction.BridgeUpgrade, signatures_) {}
 
     /**
      * @inheritdoc IBridge
@@ -183,12 +188,12 @@ contract Bridge is
     /**
      * @notice The function to add a new hash
      */
-    function addHash(bytes32 txHash_, uint256 txNonce_) external onlyOwner {
+    function addHash(
+        bytes32 txHash_,
+        uint256 txNonce_,
+        bytes[] calldata signatures_
+    ) external onlyOwnerOrSigners(ProtectedFunction.AddHash, signatures_) {
         _checkAndUpdateHashes(txHash_, txNonce_);
-    }
-
-    function _checkOwner() internal view {
-        require(owner() == _msgSender(), "Bridge: caller is not the owner");
     }
 
     function _checkNotStopped() internal view {

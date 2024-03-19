@@ -1,0 +1,19 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.9;
+
+import {UUPSUpgradeable} from "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+
+abstract contract UUPSSignableUpgradeable is UUPSUpgradeable {
+    function _authorizeUpgrade(
+        address newImplementation_,
+        bytes[] calldata signatures_
+    ) internal virtual;
+
+    function upgradeToWithSig(
+        address newImplementation_,
+        bytes[] calldata signatures_
+    ) external virtual onlyProxy {
+        _authorizeUpgrade(newImplementation_, signatures_);
+        _upgradeToAndCallUUPS(newImplementation_, new bytes(0), false);
+    }
+}

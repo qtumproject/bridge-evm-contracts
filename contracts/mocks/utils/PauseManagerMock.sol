@@ -3,10 +3,15 @@ pragma solidity ^0.8.9;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
+import {IBridge} from "../../interfaces/bridge/IBridge.sol";
+
 import {PauseManager} from "../../utils/PauseManager.sol";
 
 contract PauseManagerMock is PauseManager, OwnableUpgradeable {
-    modifier onlyPauseManagerMaintainer() override {
+    modifier onlyPauseManagerMaintainer(
+        IBridge.ProtectedFunction functionType_,
+        bytes[] calldata signatures_
+    ) override {
         _checkOwner();
         _;
     }
@@ -28,8 +33,13 @@ contract PauseManagerMock is PauseManager, OwnableUpgradeable {
 
 contract PauseManagerMockCoverage is PauseManager {
     function __PauseManagerMock_init(
-        address initialOwner_
-    ) public initializer onlyPauseManagerMaintainer {
+        address initialOwner_,
+        bytes[] calldata signatures_
+    )
+        public
+        initializer
+        onlyPauseManagerMaintainer(IBridge.ProtectedFunction.AddHash, signatures_)
+    {
         __PauseManager_init(initialOwner_);
     }
 }

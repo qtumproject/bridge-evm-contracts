@@ -13,3 +13,13 @@ export enum ERC1155BridgingType {
   LiquidityPool,
   Wrapped,
 }
+
+export enum ProtectedFunction {
+  AddHash,
+  BridgeUpgrade,
+  SetPauseManager,
+  SetSignersThreshold,
+  AddSigners,
+  RemoveSigners,
+  ToggleSignersMode,
+}

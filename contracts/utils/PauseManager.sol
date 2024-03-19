@@ -3,6 +3,8 @@ pragma solidity ^0.8.9;
 
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
+import {IBridge} from "../interfaces/bridge/IBridge.sol";
+
 /**
  * @title PauseManager Contract
  * @notice Extends PausableUpgradeable from OpenZeppelin, extends existing functionality be allowing delegation of pause
@@ -27,7 +29,10 @@ abstract contract PauseManager is PausableUpgradeable {
     /**
      * @notice Modifier to make a function callable only by the pause manager maintainer.
      */
-    modifier onlyPauseManagerMaintainer() virtual {
+    modifier onlyPauseManagerMaintainer(
+        IBridge.ProtectedFunction functionType_,
+        bytes[] calldata signatures_
+    ) virtual {
         _;
     }
 
@@ -73,7 +78,10 @@ abstract contract PauseManager is PausableUpgradeable {
      *
      * @param newManager_ The address of the new pause manager. Must not be the zero address.
      */
-    function setPauseManager(address newManager_) public onlyPauseManagerMaintainer {
+    function setPauseManager(
+        address newManager_,
+        bytes[] calldata signatures_
+    ) public onlyPauseManagerMaintainer(IBridge.ProtectedFunction.SetPauseManager, signatures_) {
         require(newManager_ != address(0), "PauseManager: zero address");
 
         _setPauseManager(newManager_);
