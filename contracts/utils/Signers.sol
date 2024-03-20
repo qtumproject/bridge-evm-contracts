@@ -80,7 +80,13 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
      * @param signaturesThreshold_ The new signature threshold.
      * @param signatures_ The signatures of the signers; this field should be empty if the `isSignersMode` flag is set to ‘false’.
      *
-     * @dev Depending on the `isSignersMode` flag, this function requires either signatures from the signers or that the transaction be sent by the owner.
+     * @dev Depending on the `isSignersMode` flag, this function requires
+     * either signatures from the signers or that the transaction be sent by the owner.
+     *
+     * | `isSignersMode` Flag | Callable By               |
+     * |----------------------|---------------------------|
+     * | `false`              | Owner                     |
+     * | `true`               | Signers                   |
      */
     function setSignaturesThreshold(
         uint256 signaturesThreshold_,
@@ -105,7 +111,13 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
      * @param signers_ The new signers to be added.
      * @param signatures_ The signatures of the signers; this field should be empty if the `isSignersMode` flag is set to ‘false’.
      *
-     * @dev Depending on the `isSignersMode` flag, this function requires either signatures from the signers or that the transaction be sent by the owner.
+     * @dev Depending on the `isSignersMode` flag, this function requires
+     * either signatures from the signers or that the transaction be sent by the owner.
+     *
+     * | `isSignersMode` Flag | Callable By               |
+     * |----------------------|---------------------------|
+     * | `false`              | Owner                     |
+     * | `true`               | Signers                   |
      */
     function addSigners(address[] calldata signers_, bytes[] calldata signatures_) public {
         bytes32 functionData_ = keccak256(
@@ -122,7 +134,13 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
      * @param signers_ The signers to remove.
      * @param signatures_ The signatures of the signers; this field should be empty if the `isSignersMode` flag is set to ‘false’.
      *
-     * @dev Depending on the `isSignersMode` flag, this function requires either signatures from the signers or that the transaction be sent by the owner.
+     * @dev Depending on the `isSignersMode` flag, this function requires
+     * either signatures from the signers or that the transaction be sent by the owner.
+     *
+     * | `isSignersMode` Flag | Callable By               |
+     * |----------------------|---------------------------|
+     * | `false`              | Owner                     |
+     * | `true`               | Signers                   |
      */
     function removeSigners(address[] calldata signers_, bytes[] calldata signatures_) public {
         bytes32 functionData_ = keccak256(
@@ -141,7 +159,13 @@ abstract contract Signers is Hashes, OwnableUpgradeable {
      * @param isSignersMode_ The new signers mode.
      * @param signatures_ The signatures of the signers; this field should be empty if the `isSignersMode` flag is set to ‘false’.
      *
-     * @dev Depending on the `isSignersMode` flag, this function requires either signatures from the signers or that the transaction be sent by the owner.
+     * @dev Depending on the `isSignersMode` flag, this function requires
+     * either signatures from the signers or that the transaction be sent by the owner.
+     *
+     * | `isSignersMode` Flag | Callable By               |
+     * |----------------------|---------------------------|
+     * | `false`              | Owner                     |
+     * | `true`               | Signers                   |
      */
     function toggleSignersMode(bool isSignersMode_, bytes[] calldata signatures_) public {
         bytes32 functionData_ = keccak256(

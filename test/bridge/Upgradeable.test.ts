@@ -12,6 +12,7 @@ describe("Upgradeable", () => {
   const reverter = new Reverter();
 
   let OWNER: SignerWithAddress;
+  let PAUSER: SignerWithAddress;
   let SECOND: SignerWithAddress;
 
   let bridge: Bridge;
@@ -21,7 +22,7 @@ describe("Upgradeable", () => {
   let proxyBridge: Bridge;
 
   before("setup", async () => {
-    [OWNER, SECOND] = await ethers.getSigners();
+    [OWNER, PAUSER, SECOND] = await ethers.getSigners();
 
     const Bridge = await ethers.getContractFactory("Bridge");
     const ERC1967Proxy = await ethers.getContractFactory("ERC1967Proxy");
@@ -32,7 +33,7 @@ describe("Upgradeable", () => {
     proxy = await ERC1967Proxy.deploy(await bridge.getAddress(), "0x");
     proxyBridge = Bridge__factory.connect(await proxy.getAddress(), OWNER);
 
-    await proxyBridge.__Bridge_init([], "1", false);
+    await proxyBridge.__Bridge_init([], PAUSER.address, "1", false);
 
     await reverter.snapshot();
   });

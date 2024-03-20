@@ -20,6 +20,7 @@ describe("Bridge", () => {
   const hash = ethers.keccak256(ethers.solidityPacked(["bytes32", "uint256"], [txHash, txNonce]));
 
   let OWNER: SignerWithAddress;
+  let PAUSER: SignerWithAddress;
   let SECOND: SignerWithAddress;
 
   let bridge: Bridge;
@@ -28,7 +29,7 @@ describe("Bridge", () => {
   let erc1155: ERC1155MintableBurnable;
 
   before("setup", async () => {
-    [OWNER, SECOND] = await ethers.getSigners();
+    [OWNER, PAUSER, SECOND] = await ethers.getSigners();
 
     const Bridge = await ethers.getContractFactory("Bridge");
 
@@ -39,7 +40,7 @@ describe("Bridge", () => {
 
     bridge = Bridge.attach(await proxy.getAddress()) as Bridge;
 
-    await bridge.__Bridge_init([OWNER.address], "1", false);
+    await bridge.__Bridge_init([OWNER.address], PAUSER.address, "1", false);
 
     const ERC20MB = await ethers.getContractFactory("ERC20MintableBurnable");
     const ERC721MB = await ethers.getContractFactory("ERC721MintableBurnable");
@@ -68,7 +69,7 @@ describe("Bridge", () => {
 
   describe("access", () => {
     it("should not initialize twice", async () => {
-      await expect(bridge.__Bridge_init([OWNER.address], "1", false)).to.be.rejectedWith(
+      await expect(bridge.__Bridge_init([OWNER.address], PAUSER.address, "1", false)).to.be.rejectedWith(
         "Initializable: contract is already initialized",
       );
     });
@@ -130,7 +131,7 @@ describe("Bridge", () => {
     });
 
     it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
-      await bridge.connect(OWNER).pause([]);
+      await bridge.connect(PAUSER).pause([]);
 
       await expect(
         bridge.depositERC20(await erc20.getAddress(), baseBalance, "receiver", "kovan", ERC20BridgingType.Wrapped),
@@ -183,7 +184,7 @@ describe("Bridge", () => {
     });
 
     it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
-      await bridge.connect(OWNER).pause([]);
+      await bridge.connect(PAUSER).pause([]);
 
       await expect(
         bridge.depositERC721(await erc721.getAddress(), baseId, "receiver", "kovan", ERC20BridgingType.Wrapped),
@@ -246,7 +247,7 @@ describe("Bridge", () => {
     });
 
     it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
-      await bridge.connect(OWNER).pause([]);
+      await bridge.connect(PAUSER).pause([]);
 
       await expect(
         bridge.depositERC1155(
@@ -294,7 +295,7 @@ describe("Bridge", () => {
     });
 
     it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
-      await bridge.connect(OWNER).pause([]);
+      await bridge.connect(PAUSER).pause([]);
 
       await expect(bridge.depositNative("receiver", "kovan", { value: baseBalance })).to.be.rejectedWith(
         "Bridge: operations are not allowed while paused",

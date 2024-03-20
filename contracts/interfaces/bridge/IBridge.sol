@@ -23,7 +23,7 @@ import {INativeHandler} from "../handlers/INativeHandler.sol";
 interface IBridge is IERC20Handler, IERC721Handler, IERC1155Handler, INativeHandler {
     /**
      * @notice The enum of protected functions.
-     * Used as a domain separator for the sign hash when the signatures are required to call a protected function.
+     * Used as a domain separator for the sign hash when the signatures are required to execute a protected function.
      */
     enum ProtectedFunction {
         None,

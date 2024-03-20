@@ -7,8 +7,8 @@ import {IBridge} from "../interfaces/bridge/IBridge.sol";
 
 /**
  * @title PauseManager Contract
- * @notice Extends PausableUpgradeable from OpenZeppelin, extends existing functionality be allowing delegation of pause
- * management to a specified address.
+ * @notice Extends PausableUpgradeable from OpenZeppelin by allowing the delegation of pause management
+ * to a specified address.
  */
 abstract contract PauseManager is PausableUpgradeable {
     address private _pauseManager;
@@ -27,7 +27,7 @@ abstract contract PauseManager is PausableUpgradeable {
     event PauseManagerChanged(address indexed newManager);
 
     /**
-     * @notice Ensures the function is callable only by the pause manager maintainer.
+     * @notice Ensures the function is callable only by the pause manager maintainer(s).
      */
     modifier onlyPauseManagerMaintainer(bytes32 functionData_, bytes[] calldata signatures_)
         virtual {
@@ -54,10 +54,18 @@ abstract contract PauseManager is PausableUpgradeable {
 
     /**
      * @notice Pauses the contract.
-     * @param signatures_ The signatures of the signers; this field should be empty if the `isSignersMode` flag is set to ‘false’ in the `Signers` contract.
+     * @param signatures_ The signatures of the signers; this field should be empty
+     * if the `isSignersMode` flag is set to ‘false’ in the `Signers` contract or if the `pauseManager` is not the zero address.
      *
      * @dev Depending on the `isSignersMode` flag in the `Signers` contract, this function requires
-     * either signatures from the signers or that the transaction be sent by the owner or pause manager.
+     * either signatures from the signers or that the transaction be sent by the owner.
+     *
+     * | `isSignersMode` Flag | `pauseManager` Address | Callable By               |
+     * |----------------------|------------------------|---------------------------|
+     * | `false`              | `address(0)`           | Owner                     |
+     * | `false`              | Not `address(0)`       | Pause Manager             |
+     * | `true`               | `address(0)`           | Signers                   |
+     * | `true`               | Not `address(0)`       | Pause Manager             |
      */
     function pause(
         bytes[] calldata signatures_
@@ -70,10 +78,18 @@ abstract contract PauseManager is PausableUpgradeable {
 
     /**
      * @notice Unpauses the contract.
-     * @param signatures_ The signatures of the signers; this field should be empty if the `isSignersMode` flag is set to ‘false’ in the `Signers` contract.
+     * @param signatures_ The signatures of the signers; this field should be empty
+     * if the `isSignersMode` flag is set to ‘false’ in the `Signers` contract or if the `pauseManager` is not the zero address.
      *
      * @dev Depending on the `isSignersMode` flag in the `Signers` contract, this function requires
-     * either signatures from the signers or that the transaction be sent by the owner or pause manager.
+     * either signatures from the signers or that the transaction be sent by the owner.
+     *
+     * | `isSignersMode` Flag | `pauseManager` Address | Callable By               |
+     * |----------------------|------------------------|---------------------------|
+     * | `false`              | `address(0)`           | Owner                     |
+     * | `false`              | Not `address(0)`       | Pause Manager             |
+     * | `true`               | `address(0)`           | Signers                   |
+     * | `true`               | Not `address(0)`       | Pause Manager             |
      */
     function unpause(
         bytes[] calldata signatures_
@@ -91,11 +107,19 @@ abstract contract PauseManager is PausableUpgradeable {
      * @notice Transfers pause management to a new address.
      * Can only be called by a pause manager maintainer(s).
      *
-     * @param newManager_ The address of the new pause manager. Must not be the zero address.
+     * @param newManager_ The address of the new pause manager, which may be the zero address.
+     * When set to the zero address, the contract can be paused or unpaused by either the owner or the signers,
+     * depending on the `isSignersMode` flag.
+     *
      * @param signatures_ The signatures of the signers; this field should be empty if the `isSignersMode` flag is set to ‘false’ in the `Signers` contract.
      *
      * @dev Depending on the `isSignersMode` flag in the `Signers` contract, this function requires
      * either signatures from the signers or that the transaction be sent by the owner.
+     *
+     * | `isSignersMode` Flag | Callable By               |
+     * |----------------------|---------------------------|
+     * | `false`              | Owner                     |
+     * | `true`               | Signers                   |
      */
     function setPauseManager(
         address newManager_,

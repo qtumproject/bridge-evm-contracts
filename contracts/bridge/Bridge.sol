@@ -62,14 +62,29 @@ contract Bridge is
         _disableInitializers();
     }
 
+    /**
+     * @notice Initializes the contract.
+     * @param signers_ The initial signers. Refer to the `Signers` contract for detailed limitations and information.
+     *
+     * @param pauseManager_ The address of the initial pause manager, which may be set to the zero address.
+     * When set to the zero address, the contract can be paused or unpaused by either the owner or the signers,
+     * depending on the `isSignersMode` flag.
+     *
+     * @param signaturesThreshold_ The number of signatures required to withdraw tokens or to execute a protected function.
+     * A list of all protected functions is available in the `IBridge` interface.
+     *
+     * @param isSignersMode_ The flag that enables or disables signers mode. When set to `true`,
+     * the contract requires signatures from the signers for executing a protected function.
+     */
     function __Bridge_init(
         address[] calldata signers_,
+        address pauseManager_,
         uint256 signaturesThreshold_,
         bool isSignersMode_
     ) external initializer {
         __Signers_init(signers_, signaturesThreshold_, isSignersMode_);
 
-        __PauseManager_init(owner());
+        __PauseManager_init(pauseManager_);
     }
 
     /*
@@ -81,6 +96,14 @@ contract Bridge is
 
     /*
      * @inheritdoc UUPSSignableUpgradeable
+     *
+     * @dev Depending on the `isSignersMode` flag in the `Signers` contract, this function requires
+     * either signatures from the signers or that the transaction be sent by the owner.
+     *
+     * | `isSignersMode` Flag | Callable By               |
+     * |----------------------|---------------------------|
+     * | `false`              | Owner                     |
+     * | `true`               | Signers                   |
      */
     function _authorizeUpgrade(
         address newImplementation,
@@ -215,6 +238,11 @@ contract Bridge is
      *
      * @dev Depending on the `isSignersMode` flag in the `Signers` contract, this function requires
      * either signatures from the signers or that the transaction be sent by the owner.
+     *
+     * | `isSignersMode` Flag | Callable By               |
+     * |----------------------|---------------------------|
+     * | `false`              | Owner                     |
+     * | `true`               | Signers                   |
      */
     function addHash(bytes32 txHash_, uint256 txNonce_, bytes[] calldata signatures_) external {
         bytes32 functionData_ = keccak256(
