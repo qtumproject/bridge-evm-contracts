@@ -4,15 +4,9 @@ import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
 import { wei } from "@scripts";
-import { ERC20BridgingType, getSignature, Reverter } from "@test-helpers";
+import { ERC20BridgingType, getSignature, ProtectedFunction, Reverter } from "@test-helpers";
 
-import {
-  ERC20MintableBurnable,
-  Bridge,
-  ERC721MintableBurnable,
-  ERC1155MintableBurnable,
-  Bridge__factory,
-} from "@ethers-v6";
+import { ERC20MintableBurnable, Bridge, ERC721MintableBurnable, ERC1155MintableBurnable } from "@ethers-v6";
 
 describe("Bridge", () => {
   const reverter = new Reverter();
@@ -26,6 +20,7 @@ describe("Bridge", () => {
   const hash = ethers.keccak256(ethers.solidityPacked(["bytes32", "uint256"], [txHash, txNonce]));
 
   let OWNER: SignerWithAddress;
+  let PAUSER: SignerWithAddress;
   let SECOND: SignerWithAddress;
 
   let bridge: Bridge;
@@ -34,7 +29,7 @@ describe("Bridge", () => {
   let erc1155: ERC1155MintableBurnable;
 
   before("setup", async () => {
-    [OWNER, SECOND] = await ethers.getSigners();
+    [OWNER, PAUSER, SECOND] = await ethers.getSigners();
 
     const Bridge = await ethers.getContractFactory("Bridge");
 
@@ -45,7 +40,7 @@ describe("Bridge", () => {
 
     bridge = Bridge.attach(await proxy.getAddress()) as Bridge;
 
-    await bridge.__Bridge_init([OWNER.address], "1");
+    await bridge.__Bridge_init([OWNER.address], PAUSER.address, "1", false);
 
     const ERC20MB = await ethers.getContractFactory("ERC20MintableBurnable");
     const ERC721MB = await ethers.getContractFactory("ERC721MintableBurnable");
@@ -74,7 +69,7 @@ describe("Bridge", () => {
 
   describe("access", () => {
     it("should not initialize twice", async () => {
-      await expect(bridge.__Bridge_init([OWNER.address], "1")).to.be.rejectedWith(
+      await expect(bridge.__Bridge_init([OWNER.address], PAUSER.address, "1", false)).to.be.rejectedWith(
         "Initializable: contract is already initialized",
       );
     });
@@ -88,17 +83,17 @@ describe("Bridge", () => {
       await expect(erc721.burnFrom(OWNER.address, 1)).to.be.rejectedWith("Ownable: caller is not the owner");
       await expect(erc1155.burnFrom(OWNER.address, 1, 1)).to.be.rejectedWith("Ownable: caller is not the owner");
 
-      await expect(bridge.connect(SECOND).addHash(txHash, txNonce)).to.be.rejectedWith(
+      await expect(bridge.connect(SECOND).addHash(txHash, txNonce, [])).to.be.rejectedWith(
         "Ownable: caller is not the owner",
       );
     });
 
     it("should set the pause manager only by the owner", async () => {
-      await expect(bridge.connect(SECOND).setPauseManager(OWNER.address)).to.be.rejectedWith(
-        "Bridge: caller is not the owner",
+      await expect(bridge.connect(SECOND).setPauseManager(OWNER.address, [])).to.be.rejectedWith(
+        "Ownable: caller is not the owner",
       );
 
-      await bridge.connect(OWNER).setPauseManager(SECOND.address);
+      await bridge.connect(OWNER).setPauseManager(SECOND.address, []);
     });
   });
 
@@ -136,7 +131,7 @@ describe("Bridge", () => {
     });
 
     it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
-      await bridge.connect(OWNER).pause();
+      await bridge.connect(PAUSER).pause([]);
 
       await expect(
         bridge.depositERC20(await erc20.getAddress(), baseBalance, "receiver", "kovan", ERC20BridgingType.Wrapped),
@@ -189,7 +184,7 @@ describe("Bridge", () => {
     });
 
     it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
-      await bridge.connect(OWNER).pause();
+      await bridge.connect(PAUSER).pause([]);
 
       await expect(
         bridge.depositERC721(await erc721.getAddress(), baseId, "receiver", "kovan", ERC20BridgingType.Wrapped),
@@ -252,7 +247,7 @@ describe("Bridge", () => {
     });
 
     it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
-      await bridge.connect(OWNER).pause();
+      await bridge.connect(PAUSER).pause([]);
 
       await expect(
         bridge.depositERC1155(
@@ -300,7 +295,7 @@ describe("Bridge", () => {
     });
 
     it("should revert if trying to deposit or withdraw when Bridge is paused", async () => {
-      await bridge.connect(OWNER).pause();
+      await bridge.connect(PAUSER).pause([]);
 
       await expect(bridge.depositNative("receiver", "kovan", { value: baseBalance })).to.be.rejectedWith(
         "Bridge: operations are not allowed while paused",
@@ -316,9 +311,100 @@ describe("Bridge", () => {
     it("should add hash", async () => {
       expect(await bridge.usedHashes(hash)).to.be.false;
 
-      await bridge.addHash(txHash, txNonce);
+      await bridge.addHash(txHash, txNonce, []);
 
       expect(await bridge.usedHashes(hash)).to.be.true;
+    });
+
+    it("should add hash with signers", async () => {
+      await bridge.toggleSignersMode(true, []);
+
+      await expect(bridge.addHash(txHash, txNonce, [])).to.be.rejectedWith("Signers: threshold is not met");
+
+      const functionData = ethers.solidityPackedKeccak256(
+        ["uint8", "bytes32", "uint256"],
+        [ProtectedFunction.AddHash, txHash, txNonce],
+      );
+
+      const signHash = await bridge.getFunctionSignHash(
+        functionData,
+        await bridge.nonces(functionData),
+        await bridge.getAddress(),
+        (await ethers.provider.getNetwork()).chainId,
+      );
+
+      const signature = await getSignature(OWNER, signHash);
+
+      await bridge.addHash(txHash, txNonce, [signature]);
+
+      expect(await bridge.usedHashes(hash)).to.be.true;
+    });
+  });
+
+  describe("PauseManager", () => {
+    it("should set the pause manager and emit 'PauseManagerChanged' event with signers", async () => {
+      await bridge.toggleSignersMode(true, []);
+
+      await expect(bridge.setPauseManager(OWNER.address, [])).to.be.rejectedWith("Signers: threshold is not met");
+
+      const functionData = ethers.solidityPackedKeccak256(
+        ["uint8", "address"],
+        [ProtectedFunction.SetPauseManager, OWNER.address],
+      );
+
+      const signHash = await bridge.getFunctionSignHash(
+        functionData,
+        await bridge.nonces(functionData),
+        await bridge.getAddress(),
+        (await ethers.provider.getNetwork()).chainId,
+      );
+
+      const signature = await getSignature(OWNER, signHash);
+
+      await expect(bridge.setPauseManager(OWNER.address, [signature]))
+        .to.emit(bridge, "PauseManagerChanged")
+        .withArgs(OWNER.address);
+
+      expect(await bridge.pauseManager()).to.equal(OWNER.address);
+    });
+
+    it("should be able to set the signers as a pause manager and call pause/unpause", async () => {
+      await bridge.setPauseManager(ethers.ZeroAddress, []);
+      await bridge.toggleSignersMode(true, []);
+
+      let functionData = ethers.solidityPackedKeccak256(["uint8"], [ProtectedFunction.Pause]);
+
+      let signHash = await bridge.getFunctionSignHash(
+        functionData,
+        await bridge.nonces(functionData),
+        await bridge.getAddress(),
+        (await ethers.provider.getNetwork()).chainId,
+      );
+
+      let signature = await getSignature(OWNER, signHash);
+
+      await expect(bridge.pause([])).to.be.rejectedWith("Signers: threshold is not met");
+
+      await bridge.pause([signature]);
+
+      expect(await bridge.paused()).to.be.true;
+
+      await expect(bridge.unpause([signature])).to.be.rejectedWith("Signers: invalid signer");
+
+      functionData = ethers.solidityPackedKeccak256(["uint8"], [ProtectedFunction.Unpause]);
+
+      signHash = await bridge.getFunctionSignHash(
+        functionData,
+        await bridge.nonces(functionData),
+        await bridge.getAddress(),
+        (await ethers.provider.getNetwork()).chainId,
+      );
+
+      signature = await getSignature(OWNER, signHash);
+
+      await bridge.unpause([signature]);
+
+      expect(await bridge.paused()).to.be.false;
     });
   });
 });

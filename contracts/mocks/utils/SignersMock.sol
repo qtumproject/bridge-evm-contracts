@@ -6,9 +6,10 @@ import {Signers} from "../../utils/Signers.sol";
 contract SignersMock is Signers {
     function __SignersMock_init(
         address[] calldata signers_,
-        uint256 signaturesThreshold_
+        uint256 signaturesThreshold_,
+        bool isSignersMode_
     ) public initializer {
-        __Signers_init(signers_, signaturesThreshold_);
+        __Signers_init(signers_, signaturesThreshold_, isSignersMode_);
     }
 
     function checkSignatures(bytes32 signHash_, bytes[] calldata signatures_) external view {

@@ -3,10 +3,12 @@ pragma solidity ^0.8.9;
 
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
+import {IBridge} from "../interfaces/bridge/IBridge.sol";
+
 /**
  * @title PauseManager Contract
- * @notice Extends PausableUpgradeable from OpenZeppelin, extends existing functionality be allowing delegation of pause
- * management to a specified address.
+ * @notice Extends PausableUpgradeable from OpenZeppelin by allowing the delegation of pause management
+ * to a specified address.
  */
 abstract contract PauseManager is PausableUpgradeable {
     address private _pauseManager;
@@ -25,17 +27,18 @@ abstract contract PauseManager is PausableUpgradeable {
     event PauseManagerChanged(address indexed newManager);
 
     /**
-     * @notice Modifier to make a function callable only by the pause manager maintainer.
+     * @notice Ensures the function is callable only by the pause manager maintainer(s).
      */
-    modifier onlyPauseManagerMaintainer() virtual {
+    modifier onlyPauseManagerMaintainer(bytes32 functionData_, bytes[] calldata signatures_)
+        virtual {
         _;
     }
 
     /**
-     * @notice Modifier to make a function callable only by the current pause manager.
+     * @notice Ensures the function is callable only by the current pause manager.
+     * If the pause manager is not set, the function is callable by the owner or the signers.
      */
-    modifier onlyPauseManager() {
-        _checkPauseManager();
+    modifier onlyPauseManager(bytes32 functionData_, bytes[] calldata signatures_) virtual {
         _;
     }
 
@@ -44,8 +47,6 @@ abstract contract PauseManager is PausableUpgradeable {
      * @param initialManager_ The address of the initial pause manager. Must not be the zero address.
      */
     function __PauseManager_init(address initialManager_) internal onlyInitializing {
-        require(initialManager_ != address(0), "PauseManager: zero address");
-
         __Pausable_init();
 
         _setPauseManager(initialManager_);
@@ -53,29 +54,83 @@ abstract contract PauseManager is PausableUpgradeable {
 
     /**
      * @notice Pauses the contract.
-     * Can only be called by the current pause manager.
+     * @param signatures_ The signatures of the signers; this field should be empty
+     * if the `isSignersMode` flag is set to ‘false’ in the `Signers` contract or if the `pauseManager` is not the zero address.
+     *
+     * @dev Depending on the `isSignersMode` flag in the `Signers` contract, this function requires
+     * either signatures from the signers or that the transaction be sent by the owner.
+     *
+     * | `isSignersMode` Flag | `pauseManager` Address | Callable By               |
+     * |----------------------|------------------------|---------------------------|
+     * | `false`              | `address(0)`           | Owner                     |
+     * | `false`              | Not `address(0)`       | Pause Manager             |
+     * | `true`               | `address(0)`           | Signers                   |
+     * | `true`               | Not `address(0)`       | Pause Manager             |
      */
-    function pause() public onlyPauseManager {
+    function pause(
+        bytes[] calldata signatures_
+    )
+        public
+        onlyPauseManager(keccak256(abi.encodePacked(IBridge.ProtectedFunction.Pause)), signatures_)
+    {
         _pause();
     }
 
     /**
      * @notice Unpauses the contract.
-     * Can only be called by the current pause manager.
+     * @param signatures_ The signatures of the signers; this field should be empty
+     * if the `isSignersMode` flag is set to ‘false’ in the `Signers` contract or if the `pauseManager` is not the zero address.
+     *
+     * @dev Depending on the `isSignersMode` flag in the `Signers` contract, this function requires
+     * either signatures from the signers or that the transaction be sent by the owner.
+     *
+     * | `isSignersMode` Flag | `pauseManager` Address | Callable By               |
+     * |----------------------|------------------------|---------------------------|
+     * | `false`              | `address(0)`           | Owner                     |
+     * | `false`              | Not `address(0)`       | Pause Manager             |
+     * | `true`               | `address(0)`           | Signers                   |
+     * | `true`               | Not `address(0)`       | Pause Manager             |
      */
-    function unpause() public onlyPauseManager {
+    function unpause(
+        bytes[] calldata signatures_
+    )
+        public
+        onlyPauseManager(
+            keccak256(abi.encodePacked(IBridge.ProtectedFunction.Unpause)),
+            signatures_
+        )
+    {
         _unpause();
     }
 
     /**
      * @notice Transfers pause management to a new address.
-     * Can only be called by a pause manager maintainer.
+     * Can only be called by a pause manager maintainer(s).
      *
-     * @param newManager_ The address of the new pause manager. Must not be the zero address.
+     * @param newManager_ The address of the new pause manager, which may be the zero address.
+     * When set to the zero address, the contract can be paused or unpaused by either the owner or the signers,
+     * depending on the `isSignersMode` flag.
+     *
+     * @param signatures_ The signatures of the signers; this field should be empty if the `isSignersMode` flag is set to ‘false’ in the `Signers` contract.
+     *
+     * @dev Depending on the `isSignersMode` flag in the `Signers` contract, this function requires
+     * either signatures from the signers or that the transaction be sent by the owner.
+     *
+     * | `isSignersMode` Flag | Callable By               |
+     * |----------------------|---------------------------|
+     * | `false`              | Owner                     |
+     * | `true`               | Signers                   |
      */
-    function setPauseManager(address newManager_) public onlyPauseManagerMaintainer {
-        require(newManager_ != address(0), "PauseManager: zero address");
-
+    function setPauseManager(
+        address newManager_,
+        bytes[] calldata signatures_
+    )
+        public
+        onlyPauseManagerMaintainer(
+            keccak256(abi.encodePacked(IBridge.ProtectedFunction.SetPauseManager, newManager_)),
+            signatures_
+        )
+    {
         _setPauseManager(newManager_);
     }
 

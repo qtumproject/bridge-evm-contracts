@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 
 import { SignerWithAddress } from "@nomicfoundation/hardhat-ethers/signers";
 
-import { getSignature, Reverter } from "@test-helpers";
+import { getSignature, ProtectedFunction, Reverter } from "@test-helpers";
 
 import { SignersMock } from "@ethers-v6";
 
@@ -23,7 +23,7 @@ describe("Signers", () => {
     const Signers = await ethers.getContractFactory("SignersMock");
     signers = await Signers.deploy();
 
-    await signers.__SignersMock_init([], "1");
+    await signers.__SignersMock_init([], "1", false);
 
     await reverter.snapshot();
   });
@@ -32,21 +32,21 @@ describe("Signers", () => {
 
   describe("#access", () => {
     it("should not initialize twice", async () => {
-      await expect(signers.__Signers_init([OWNER.address], "1")).to.be.rejectedWith(
+      await expect(signers.__Signers_init([OWNER.address], "1", false)).to.be.rejectedWith(
         "Initializable: contract is not initializing",
       );
     });
 
     it("only owner should call these functions", async () => {
-      await expect(signers.connect(SECOND).setSignaturesThreshold(1)).to.be.rejectedWith(
+      await expect(signers.connect(SECOND).setSignaturesThreshold(1, [])).to.be.rejectedWith(
         "Ownable: caller is not the owner",
       );
 
-      await expect(signers.connect(SECOND).addSigners([OWNER.address])).to.be.rejectedWith(
+      await expect(signers.connect(SECOND).addSigners([OWNER.address], [])).to.be.rejectedWith(
         "Ownable: caller is not the owner",
       );
 
-      await expect(signers.connect(SECOND).removeSigners([OWNER.address])).to.be.rejectedWith(
+      await expect(signers.connect(SECOND).removeSigners([OWNER.address], [])).to.be.rejectedWith(
         "Ownable: caller is not the owner",
       );
     });
@@ -56,16 +56,76 @@ describe("Signers", () => {
     it("should set signaturesThreshold", async () => {
       let expectedSignaturesThreshold = 5;
 
-      await signers.setSignaturesThreshold(expectedSignaturesThreshold);
+      await signers.setSignaturesThreshold(expectedSignaturesThreshold, []);
 
       expect(await signers.signaturesThreshold()).to.equal(expectedSignaturesThreshold);
+    });
+
+    it("should set signaturesThreshold with signers", async () => {
+      await signers.addSigners([OWNER.address, SECOND.address], []);
+      await signers.toggleSignersMode(true, []);
+
+      const functionData = ethers.solidityPackedKeccak256(
+        ["uint8", "uint256"],
+        [ProtectedFunction.SetSignersThreshold, 2],
+      );
+
+      const signHash = await signers.getFunctionSignHash(
+        functionData,
+        await signers.nonces(functionData),
+        await signers.getAddress(),
+        (await ethers.provider.getNetwork()).chainId,
+      );
+
+      const signature = await getSignature(OWNER, signHash);
+
+      await expect(signers.setSignaturesThreshold(3, [signature])).to.be.rejectedWith("Signers: invalid signer");
+
+      await expect(signers.setSignaturesThreshold(2, [signature])).to.be.fulfilled;
     });
 
     it("should revert when try to set signaturesThreshold to 0", async () => {
       let expectedSignaturesThreshold = 0;
 
-      expect(signers.setSignaturesThreshold(expectedSignaturesThreshold)).to.be.rejectedWith(
+      expect(signers.setSignaturesThreshold(expectedSignaturesThreshold, [])).to.be.rejectedWith(
         "Signers: invalid threshold",
+      );
+    });
+  });
+
+  describe("#toggleSignersMode", () => {
+    it("should toggle signers mode", async () => {
+      await signers.toggleSignersMode(true, []);
+
+      expect(await signers.isSignersMode()).to.be.true;
+    });
+
+    it("should toggle signers mode with signers", async () => {
+      await signers.addSigners([OWNER.address, SECOND.address], []);
+      await signers.toggleSignersMode(true, []);
+
+      const functionData = ethers.solidityPackedKeccak256(
+        ["uint8", "bool"],
+        [ProtectedFunction.ToggleSignersMode, false],
+      );
+
+      const signHash = await signers.getFunctionSignHash(
+        functionData,
+        await signers.nonces(functionData),
+        await signers.getAddress(),
+        (await ethers.provider.getNetwork()).chainId,
+      );
+
+      const signature = await getSignature(OWNER, signHash);
+
+      await expect(signers.toggleSignersMode(true, [signature])).to.be.rejectedWith("Signers: invalid signer");
+
+      await expect(signers.toggleSignersMode(false, [signature])).to.be.fulfilled;
+    });
+
+    it("should revert when try to toggle signers mode by not owner", async () => {
+      await expect(signers.connect(SECOND).toggleSignersMode(true, [])).to.be.rejectedWith(
+        "Ownable: caller is not the owner",
       );
     });
   });
@@ -74,15 +134,38 @@ describe("Signers", () => {
     it("should add signers", async () => {
       const expectedSigners = [OWNER.address, SECOND.address, THIRD.address];
 
-      await signers.addSigners(expectedSigners);
+      await signers.addSigners(expectedSigners, []);
 
       expect(await signers.getSigners()).to.be.deep.equal(expectedSigners);
+    });
+
+    it("should add signers with signers", async () => {
+      await signers.addSigners([OWNER.address, SECOND.address], []);
+      await signers.toggleSignersMode(true, []);
+
+      const functionData = ethers.solidityPackedKeccak256(
+        ["uint8", "address[]"],
+        [ProtectedFunction.AddSigners, [THIRD.address]],
+      );
+
+      const signHash = await signers.getFunctionSignHash(
+        functionData,
+        await signers.nonces(functionData),
+        await signers.getAddress(),
+        (await ethers.provider.getNetwork()).chainId,
+      );
+
+      const signature = await getSignature(OWNER, signHash);
+
+      await expect(signers.addSigners([OWNER.address], [signature])).to.be.rejectedWith("Signers: invalid signer");
+
+      await expect(signers.addSigners([THIRD.address], [signature])).to.be.fulfilled;
     });
 
     it("should revert when try add zero address signer", async () => {
       let expectedSigners = [OWNER.address, SECOND.address, ethers.ZeroAddress];
 
-      expect(signers.addSigners(expectedSigners)).to.be.rejectedWith("Signers: zero signer");
+      expect(signers.addSigners(expectedSigners, [])).to.be.rejectedWith("Signers: zero signer");
     });
   });
 
@@ -91,10 +174,35 @@ describe("Signers", () => {
       let signersToAdd = [OWNER.address, SECOND.address, THIRD.address];
       let signersToRemove = [OWNER.address, SECOND.address];
 
-      await signers.addSigners(signersToAdd);
-      await signers.removeSigners(signersToRemove);
+      await signers.addSigners(signersToAdd, []);
+      await signers.removeSigners(signersToRemove, []);
 
       expect(await signers.getSigners()).to.be.deep.equal([THIRD.address]);
+    });
+
+    it("should remove signers with signers", async () => {
+      await signers.addSigners([OWNER.address, SECOND.address, THIRD.address], []);
+      await signers.toggleSignersMode(true, []);
+
+      const functionData = ethers.solidityPackedKeccak256(
+        ["uint8", "address[]"],
+        [ProtectedFunction.RemoveSigners, [OWNER.address]],
+      );
+
+      const signHash = await signers.getFunctionSignHash(
+        functionData,
+        await signers.nonces(functionData),
+        await signers.getAddress(),
+        (await ethers.provider.getNetwork()).chainId,
+      );
+
+      const signature = await getSignature(OWNER, signHash);
+
+      await expect(signers.removeSigners([THIRD.address], [signature])).to.be.rejectedWith("Signers: invalid signer");
+
+      await signers.removeSigners([OWNER.address], [signature]);
+
+      expect(await signers.getSigners()).to.be.deep.equal([THIRD.address, SECOND.address]);
     });
   });
 
@@ -103,7 +211,7 @@ describe("Signers", () => {
 
     beforeEach("setup", async () => {
       signersToAdd = [OWNER.address, SECOND.address, THIRD.address];
-      await signers.addSigners(signersToAdd);
+      await signers.addSigners(signersToAdd, []);
     });
 
     async function getSigHash() {
@@ -119,7 +227,7 @@ describe("Signers", () => {
     }
 
     it("should check signatures", async () => {
-      await signers.addSigners([FOURTH.address]);
+      await signers.addSigners([FOURTH.address], []);
 
       const signHash = await getSigHash();
 

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import {UUPSUpgradeable} from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
-
 import {IBridge} from "../interfaces/bridge/IBridge.sol";
 
 import {ERC20Handler} from "../handlers/ERC20Handler.sol";
@@ -10,18 +8,17 @@ import {ERC721Handler} from "../handlers/ERC721Handler.sol";
 import {ERC1155Handler} from "../handlers/ERC1155Handler.sol";
 import {NativeHandler} from "../handlers/NativeHandler.sol";
 
-import {Hashes} from "../utils/Hashes.sol";
 import {Signers} from "../utils/Signers.sol";
 import {PauseManager} from "../utils/PauseManager.sol";
+import {UUPSSignableUpgradeable} from "../utils/UUPSSignableUpgradeable.sol";
 
 /**
  * @title Bridge Contract
  */
 contract Bridge is
     IBridge,
-    UUPSUpgradeable,
+    UUPSSignableUpgradeable,
     Signers,
-    Hashes,
     PauseManager,
     ERC20Handler,
     ERC721Handler,
@@ -29,10 +26,23 @@ contract Bridge is
     NativeHandler
 {
     /**
-     * @dev Ensures the function is callable only by the pause manager maintainer.
+     * @inheritdoc PauseManager
      */
-    modifier onlyPauseManagerMaintainer() override {
-        _checkOwner();
+    modifier onlyPauseManagerMaintainer(bytes32 functionData_, bytes[] calldata signatures_)
+        override {
+        _checkOwnerOrSignatures(functionData_, signatures_);
+        _;
+    }
+
+    /**
+     * @inheritdoc PauseManager
+     */
+    modifier onlyPauseManager(bytes32 functionData_, bytes[] calldata signatures_) override {
+        if (pauseManager() != address(0)) {
+            _checkPauseManager();
+        } else {
+            _checkOwnerOrSignatures(functionData_, signatures_);
+        }
         _;
     }
 
@@ -52,19 +62,59 @@ contract Bridge is
         _disableInitializers();
     }
 
+    /**
+     * @notice Initializes the contract.
+     * @param signers_ The initial signers. Refer to the `Signers` contract for detailed limitations and information.
+     *
+     * @param pauseManager_ The address of the initial pause manager, which may be set to the zero address.
+     * When set to the zero address, the contract can be paused or unpaused by either the owner or the signers,
+     * depending on the `isSignersMode` flag.
+     *
+     * @param signaturesThreshold_ The number of signatures required to withdraw tokens or to execute a protected function.
+     * A list of all protected functions is available in the `IBridge` interface.
+     *
+     * @param isSignersMode_ The flag that enables or disables signers mode. When set to `true`,
+     * the contract requires signatures from the signers for executing a protected function.
+     */
     function __Bridge_init(
         address[] calldata signers_,
-        uint256 signaturesThreshold_
+        address pauseManager_,
+        uint256 signaturesThreshold_,
+        bool isSignersMode_
     ) external initializer {
-        __Signers_init(signers_, signaturesThreshold_);
+        __Signers_init(signers_, signaturesThreshold_, isSignersMode_);
 
-        __PauseManager_init(owner());
+        __PauseManager_init(pauseManager_);
     }
 
-    /**
+    /*
      * @inheritdoc UUPSUpgradeable
      */
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+    function _authorizeUpgrade(address) internal pure override {
+        revert("Bridge: this upgrade method is turned off");
+    }
+
+    /*
+     * @inheritdoc UUPSSignableUpgradeable
+     *
+     * @dev Depending on the `isSignersMode` flag in the `Signers` contract, this function requires
+     * either signatures from the signers or that the transaction be sent by the owner.
+     *
+     * | `isSignersMode` Flag | Callable By               |
+     * |----------------------|---------------------------|
+     * | `false`              | Owner                     |
+     * | `true`               | Signers                   |
+     */
+    function _authorizeUpgrade(
+        address newImplementation,
+        bytes[] calldata signatures_
+    ) internal override {
+        bytes32 functionData_ = keccak256(
+            abi.encodePacked(IBridge.ProtectedFunction.BridgeUpgrade, newImplementation)
+        );
+
+        _checkOwnerOrSignatures(functionData_, signatures_);
+    }
 
     /**
      * @inheritdoc IBridge
@@ -182,13 +232,26 @@ contract Bridge is
 
     /**
      * @notice The function to add a new hash
+     * @param txHash_ The transaction hash from the other chain
+     * @param txNonce_ The nonce of the transaction from the other chain
+     * @param signatures_ The signatures of the signers; this field should be empty if the `isSignersMode` flag is set to ‘false’.
+     *
+     * @dev Depending on the `isSignersMode` flag in the `Signers` contract, this function requires
+     * either signatures from the signers or that the transaction be sent by the owner.
+     *
+     * | `isSignersMode` Flag | Callable By               |
+     * |----------------------|---------------------------|
+     * | `false`              | Owner                     |
+     * | `true`               | Signers                   |
      */
-    function addHash(bytes32 txHash_, uint256 txNonce_) external onlyOwner {
-        _checkAndUpdateHashes(txHash_, txNonce_);
-    }
+    function addHash(bytes32 txHash_, uint256 txNonce_, bytes[] calldata signatures_) external {
+        bytes32 functionData_ = keccak256(
+            abi.encodePacked(IBridge.ProtectedFunction.AddHash, txHash_, txNonce_)
+        );
 
-    function _checkOwner() internal view {
-        require(owner() == _msgSender(), "Bridge: caller is not the owner");
+        _checkOwnerOrSignatures(functionData_, signatures_);
+
+        _checkAndUpdateHashes(txHash_, txNonce_);
     }
 
     function _checkNotStopped() internal view {
