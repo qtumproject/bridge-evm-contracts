@@ -1,3 +1,5 @@
+import { ethers } from "ethers";
+
 import { Deployer, Reporter } from "@solarity/hardhat-migrate";
 
 import { Bridge__factory, ERC1967Proxy__factory } from "@ethers-v6";
@@ -11,6 +13,7 @@ const threshold = parseInt(process.env.BRIDGE_THRESHHOLD!, 10);
 const networkMap: Record<string, any> = {
   "8889": qtumDeployment,
   "1": ethereumDeployment,
+  "11155111": ethereumDeployment,
 };
 
 export = async (deployer: Deployer) => {
@@ -47,7 +50,12 @@ async function ethereumDeployment(deployer: Deployer): Promise<[string, string]>
   const bridgeImplementation = await deployer.deploy(Bridge__factory);
   const proxy = await deployer.deploy(ERC1967Proxy__factory, [
     await bridgeImplementation.getAddress(),
-    bridgeImplementation.interface.encodeFunctionData("__Bridge_init", [validators, threshold]),
+    bridgeImplementation.interface.encodeFunctionData("__Bridge_init", [
+      validators,
+      ethers.ZeroAddress,
+      threshold,
+      false,
+    ]),
   ]);
 
   const bridge = await deployer.deployed(Bridge__factory, await proxy.getAddress());
