@@ -35,7 +35,12 @@ async function qtumDeployment(_deployer: Deployer): Promise<[string, string]> {
   const bridgeImplementation = await deployQTumContract(Bridge__factory, "Bridge Implementation");
   const proxy = await deployQTumContract(ERC1967Proxy__factory, "Bridge Proxy", [
     bridgeImplementation.address,
-    bridgeImplementation.interface.encodeFunctionData("__Bridge_init", [validators, threshold]),
+    bridgeImplementation.interface.encodeFunctionData("__Bridge_init", [
+      validators,
+      ethers.ZeroAddress,
+      threshold,
+      true,
+    ]),
   ]);
 
   const bridge = getQTumContractAt(Bridge__factory, "Bridge Proxy");
@@ -54,7 +59,7 @@ async function ethereumDeployment(deployer: Deployer): Promise<[string, string]>
       validators,
       ethers.ZeroAddress,
       threshold,
-      false,
+      true,
     ]),
   ]);
 
