@@ -44,10 +44,6 @@ export async function deployQTumContract(
 
   await reportTransactionReceipt(await instance.deployTransaction.wait(), contractName);
 
-  if (UserStorage.has(contractName)) {
-    throw new Error(`Contract ${contractName} already exists in UserStorage`);
-  }
-
   UserStorage.set(contractName, instance.address);
 
   return instance;

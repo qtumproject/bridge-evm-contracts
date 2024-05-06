@@ -11,6 +11,7 @@ const validators = process.env.BRIDGE_VALIDATORS!.split(",");
 const threshold = parseInt(process.env.BRIDGE_THRESHHOLD!, 10);
 
 const networkMap: Record<string, any> = {
+  "81": qtumDeployment,
   "8889": qtumDeployment,
   "1": ethereumDeployment,
   "11155111": ethereumDeployment,
@@ -39,7 +40,7 @@ async function qtumDeployment(_deployer: Deployer): Promise<[string, string]> {
       validators,
       ethers.ZeroAddress,
       threshold,
-      true,
+      false,
     ]),
   ]);
 
@@ -59,7 +60,7 @@ async function ethereumDeployment(deployer: Deployer): Promise<[string, string]>
       validators,
       ethers.ZeroAddress,
       threshold,
-      true,
+      false,
     ]),
   ]);
 

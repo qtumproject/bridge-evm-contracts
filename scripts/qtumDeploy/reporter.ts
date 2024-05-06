@@ -1,7 +1,7 @@
 import { QTumReceipt } from "@/types";
 import { getQTumProvider } from "@/scripts/qtumDeploy/network";
 
-import { sleep } from "@solarity/hardhat-migrate/dist/src/utils";
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function reportTransaction(transaction: any, identifier: string, attempts = 20) {
   while (attempts > 0) {

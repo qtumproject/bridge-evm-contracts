@@ -406,5 +406,26 @@ describe("Bridge", () => {
 
       expect(await bridge.paused()).to.be.false;
     });
+
+    it("should be able to pause/unpause with pauseManager with `isSignersMode` true", async () => {
+      await bridge.setPauseManager(SECOND.address, []);
+      await bridge.toggleSignersMode(true, []);
+
+      await expect(bridge.connect(SECOND).pause([])).to.be.eventually.fulfilled;
+      await expect(bridge.connect(OWNER).pause([])).to.be.eventually.rejected;
+
+      let functionData = ethers.solidityPackedKeccak256(["uint8"], [ProtectedFunction.Pause]);
+
+      let signHash = await bridge.getFunctionSignHash(
+        functionData,
+        await bridge.nonces(functionData),
+        await bridge.getAddress(),
+        (await ethers.provider.getNetwork()).chainId,
+      );
+
+      let signature = await getSignature(OWNER, signHash);
+
+      await expect(bridge.pause([signature])).to.be.eventually.rejected;
+    });
   });
 });
