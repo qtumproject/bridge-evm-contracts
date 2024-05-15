@@ -45,6 +45,6 @@ abstract contract UUPSSignableUpgradeable is UUPSUpgradeable {
         bytes calldata data_
     ) external virtual onlyProxy {
         _authorizeUpgrade(newImplementation_, signatures_);
-        _upgradeToAndCallUUPS(newImplementation_, data_, true);
+        _upgradeToAndCallUUPS(newImplementation_, data_, false);
     }
 }
