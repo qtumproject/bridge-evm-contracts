@@ -14,14 +14,20 @@ Then, create a `.env` file in the root directory. A template `.env.example` can 
 
 Here's a general explanation of the environment variables used for deploying Bridge EVM contracts:
 
-- `PRIVATE_KEY`: The private key of the account that will be used to deploy the contracts on the Ethereum network. (**Must** have sufficient balance to cover transaction fees)
-- `QTUM_PRIVATE_KEY`: If you are deploying the contracts on the Qtum network, you need to provide the private key of the account that will be used for deployment on Qtum. (**Must** have sufficient balance to cover transaction fees)
+#### Deployer Private Keys
+- `PRIVATE_KEY`: The private key of the account that will be used to deploy the contracts on the Ethereum network.
+(**Must have sufficient balance to cover transaction fees**; Must be in Hexadecimal format, e.g: `1234567890abcdef...`)
+- `QTUM_PRIVATE_KEY`: If you are deploying the contracts on the Qtum network, you need to provide the private key of the account that will be used for deployment on Qtum. (**Must have sufficient balance to cover transaction fees**; Could be in WIF format, e.g: `cVjz1...` or Hexadecimal format, e.g: `1234567890abcdef...`)
 
+
+#### RPC Configuration
 - `INFURA_KEY`: This variable should hold your Infura project ID. You need to sign up for an Infura account and create a project to obtain the project ID.
 - `QTUM_API_KEY`: If you are deploying on the Qtum network, you need to provide your Qtum API key.
 
+#### Etherscan Configuration
 - `ETHERSCAN_KEY`: The Etherscan API key is used to verify deployed contracts on Etherscan.
 
+#### Bridge Contract Configuration
 - `BRIDGE_OWNER`: This variable specifies the address of the owner of the bridge contract. (**Must** be an EVM Address)
 - `BRIDGE_VALIDATORS`: This variable should contain a comma-separated list of addresses that are allowed to sign withdrawals on the bridge contract. (**Must** be EVM Addresses)
 - `BRIDGE_THRESHOLD`: This variable determines the minimum number of signatures required from the validators to approve a withdrawal on the bridge contract.
