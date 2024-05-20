@@ -30,4 +30,21 @@ abstract contract UUPSSignableUpgradeable is UUPSUpgradeable {
         _authorizeUpgrade(newImplementation_, signatures_);
         _upgradeToAndCallUUPS(newImplementation_, new bytes(0), false);
     }
+
+    /**
+     * @notice Upgrade the implementation of the proxy to `newImplementation`, and subsequently execute the function call
+     * encoded in `data`.
+     *
+     * Calls {_authorizeUpgrade} with the provided `newImplementation` and `signatures`.
+     *
+     * Emits an {Upgraded} event.
+     */
+    function upgradeToWithSigAndCall(
+        address newImplementation_,
+        bytes[] calldata signatures_,
+        bytes calldata data_
+    ) external virtual onlyProxy {
+        _authorizeUpgrade(newImplementation_, signatures_);
+        _upgradeToAndCallUUPS(newImplementation_, data_, false);
+    }
 }

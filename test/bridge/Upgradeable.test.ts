@@ -50,6 +50,10 @@ describe("Upgradeable", () => {
     await expect(newBridge.upgradeToWithSig(await newBridge.getAddress(), [])).to.be.rejectedWith(
       "Function must be called through delegatecall",
     );
+
+    await expect(newBridge.upgradeToWithSigAndCall(await newBridge.getAddress(), [], "0x")).to.be.rejectedWith(
+      "Function must be called through delegatecall",
+    );
   });
 
   it("should upgrade implementation", async () => {
@@ -85,6 +89,10 @@ describe("Upgradeable", () => {
     await expect(proxyBridge.connect(SECOND).upgradeToWithSig(await newBridge.getAddress(), [])).to.be.rejectedWith(
       "Ownable: caller is not the owner",
     );
+
+    await expect(
+      proxyBridge.connect(SECOND).upgradeToWithSigAndCall(await newBridge.getAddress(), [], "0x"),
+    ).to.be.rejectedWith("Ownable: caller is not the owner");
   });
 
   it("should receive ether through proxy", async () => {
