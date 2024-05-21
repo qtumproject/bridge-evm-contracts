@@ -63,3 +63,93 @@ Or, you can verify the contracts on Etherscan **immediately** after the deployme
 npx hardhat migrate:verify --network sepolia
 ```
 
+# USDC Hand Over Procedure
+
+The steps below outline the procedure for transferring ownership of a bridged USDC token contract to Circle to facilitate an upgrade to native USDC.
+
+As outlined in the [Bridged USDC Standard](https://github.com/circlefin/stablecoin-evm/blob/c582e58f691cc0cc7df1c85b6ac07267f8861520/doc/bridged_USDC_standard.md#bridged-usdc-standard) document:
+
+1. The third-party team follows the standard to deploy their bridge contracts or retains the ability to upgrade their bridge contracts in the future to incorporate the required functionality.
+
+This functionality is supported by the Upgradability Nature of the [Bridge Contract](https://github.com/qtumproject/bridge-evm-contracts/blob/3c50da4b2a753659de158fb8a1fb975ff3f97bdb/contracts/bridge/Bridge.sol#L18).
+
+It follows the [Universal Upgradeable Proxy Standard](https://eips.ethereum.org/EIPS/eip-1822); therefore, the implementation can be upgraded either by the Bridge Owner or by the Bridge Validators (the second option is possible only if it was configured as such).
+
+2. The third-party team follows the standard to deploy their bridged USDC token contract.
+
+This option is also fully fulfilled by using specific deployment scripts implemented in the [USDC Deployment Scripts](https://github.com/qtumproject/usdc-deployment-script) repository.
+
+Check out its [README](https://github.com/qtumproject/usdc-deployment-script?tab=readme-ov-file#usdc-deployment-scripts) for more details.
+
+3. If and when a joint decision is made by the third-party team and Circle to securely transfer ownership of the bridged USDC token contract to Circle and perform an upgrade to native USDC, the following will take place:
+- The third-party team will pause bridging activity and reconcile in-flight bridging activity to harmonize the total supply of native USDC locked on
+  the origin chain with the total supply of bridged USDC on the destination chain.
+- The third-party team will securely re-assign the contract roles of the bridged USDC token contract to Circle.
+- Circle and the third-party team will jointly coordinate to burn the supply of native USDC locked in the bridge contract on the origin chain and upgrade the bridged USDC token contract on the destination chain to native USDC.
+
+Option 3.1 can be achieved by using the [Pause Manager](https://github.com/qtumproject/bridge-evm-contracts/blob/main/contracts/utils/PauseManager.sol)
+functionality. It exposes the `pause` function to stop any deposits and withdrawals to harmonize the total supply of native USDC.
+
+Option 3.2 is natively supported by the [stablecoin-evm](https://github.com/circlefin/stablecoin-evm/tree/c582e58f691cc0cc7df1c85b6ac07267f8861520) contracts. It can be done by the Token Owner.
+
+The first part of Option 3.3, `Circle and the third-party team will jointly coordinate to burn the supply of native USDC locked in the bridge contract on the origin chain`, is achieved by deploying the [BridgeV2]() contract and upgrading the already deployed Bridge contract using the BridgeV2 implementation.
+
+During the upgrade, the `upgradeToWithSigAndCall` function MUST be used to prevent any security risks during the upgrade process.
+
+### Commands to deploy the BridgeV2 contract
+
+To deploy the BridgeV2 contract on the Ethereum Sepolia, you can run the following command:
+
+```bash
+npx hardhat migrate --network sepolia --only 10 --verify
+```
+
+A list of all available networks can be found in the [hardhat.config.js](https://github.com/qtumproject/bridge-evm-contracts/blob/3c50da4b2a753659de158fb8a1fb975ff3f97bdb/hardhat.config.ts) file.
+
+### Commands to upgrade the Bridge contract to BridgeV2
+
+To correctly upgrade the implementation of the Bridge contract to BridgeV2, you first must be the owner of the Bridge contract.
+
+Alternatively, reach a consensus among validators to upgrade the Bridge contract (if Signers, aka Validators, are "working" as bridge owners).
+
+You will need to call the `upgradeToWithSigAndCall` function of the Bridge contract with the following parameters:
+
+- `newImplementation_`: The address of the new implementation contract. In this case, it is the newly deployed `BridgeV2` contract address.
+- `signatures_`: If the [isSignersMode](https://github.com/qtumproject/bridge-evm-contracts/blob/3c50da4b2a753659de158fb8a1fb975ff3f97bdb/contracts/utils/Signers.sol#L42) is set to `true`, meaning that the validators act as bridge owners, it should be an array of signatures from the validators approving the upgrade. __Otherwise, pass an empty array.__
+- `data_`: The initialization calldata that will be used to perform a call to immediately initialize the proxy contract.
+  In our case, it will be the `__USDCManager_init` function call. To calculate the calldata, you can use the following command:
+
+```bash
+USDC_TOKEN_ADDRESS="0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF" CIRCLE_TRUSTED_ACCOUNT="0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" npx hardhat run ./scripts/hardhat/calculate-bridgeV2-upgrade-data.ts
+```
+
+Replace `USDC_TOKEN_ADDRESS` and `CIRCLE_TRUSTED_ACCOUNT` with the actual addresses of the USDC token and Circle Trusted Account.
+
+Example output:
+
+```bash
+Data to be passed to upgradeToWithSigAndCall as data parameter:  0x7778cd29000000000000000000000000ffffffffffffffffffffffffffffffffffffffff000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+```
+
+Again, ensure that you replace `0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF` and `0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE` with the actual addresses!
+
+### Actual Bridge contract upgrade
+
+After you have the `data` parameter, you can call the `upgradeToWithSigAndCall` function of the Bridge contract on Etherscan.
+
+You need to go to [Etherscan](https://etherscan.io/) and find the **Proxy** of the Bridge contract. Then go to the `Write as Proxy` tab and find the `upgradeToWithSigAndCall` function.
+
+If you are unable to see the `Write as Proxy` button, click the `Code` tab, find the `More Options` dropdown, click the `Is this a proxy?` button,
+then click `Verify`, and finally, click `Save`.
+
+After this sequence of steps, the `Write as Proxy` button should appear to the right of the `Write Contract` button.
+
+At this point, you have all the details and can successfully upgrade the Bridge contract to BridgeV2.
+
+> Ensure that you are the Bridge Owner or have a consensus among validators to perform this action.
+
+--- 
+
+After the steps above (pausing and implementation upgrade), the Circle team can proceed with their part of burning the locked USDC tokens.
+
+This step concludes the USDC Hand Over Procedure.
