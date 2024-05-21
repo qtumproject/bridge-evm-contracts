@@ -31,7 +31,7 @@ contract USDCManager {
     bytes32 private constant USDCManagerStorageLocation =
         0x95d68dd162e0430e18daee917edf8bcd51a878f4fbf5d7005f16074d5f952e00;
 
-    function _getUSDCManagerStorage() private pure returns (USDCManagerStorage storage $) {
+    function _getUSDCManagerStorage() internal pure returns (USDCManagerStorage storage $) {
         assembly {
             $.slot := USDCManagerStorageLocation
         }
@@ -72,6 +72,27 @@ contract USDCManager {
         USDCManagerStorage storage $ = _getUSDCManagerStorage();
 
         $.lockedUSDCAddress.burn($.lockedUSDCAddress.balanceOf(address(this)));
+    }
+
+    /**
+    * @notice Returns the address of the manager.
+    */
+    function getManagerAddress() external view returns (address) {
+        return _getUSDCManagerStorage().managerAddress;
+    }
+
+    /**
+    * @notice Returns the address of the locked USDC token.
+    */
+    function getLockedUSDCAddress() external view returns (IUSDCType) {
+        return _getUSDCManagerStorage().lockedUSDCAddress;
+    }
+
+    /**
+    * @notice Returns the initialized version of the contract.
+    */
+    function getInitializedVersion() external view returns (uint256) {
+        return _getUSDCManagerStorage().initializedVersion;
     }
 
     /**

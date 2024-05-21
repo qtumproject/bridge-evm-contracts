@@ -8,10 +8,12 @@ contract USDCManagerV2 is USDCManager {
         IUSDCType lockedUSDCAddress_,
         address managerAddress_
     ) external override {
-        require(initializedVersion < 2, "USDCManager: already initialized");
-        initializedVersion = 2;
+        USDCManagerStorage storage $ = _getUSDCManagerStorage();
 
-        managerAddress = managerAddress_;
-        lockedUSDCAddress = lockedUSDCAddress_;
+        require($.initializedVersion < 2, "USDCManager: already initialized");
+        $.initializedVersion = 2;
+
+        $.managerAddress = managerAddress_;
+        $.lockedUSDCAddress = lockedUSDCAddress_;
     }
 }

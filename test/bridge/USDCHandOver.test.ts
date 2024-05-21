@@ -58,9 +58,9 @@ describe("USDCHandOver", () => {
 
     bridge = NewBridge.attach(await bridge.getAddress()) as BridgeV2;
 
-    expect(await bridge.managerAddress()).to.be.equal(SECOND.address);
-    expect(await bridge.lockedUSDCAddress()).to.be.equal(await erc20.getAddress());
-    expect(await bridge.initializedVersion()).to.be.equal("1");
+    expect(await bridge.getManagerAddress()).to.be.equal(SECOND.address);
+    expect(await bridge.getLockedUSDCAddress()).to.be.equal(await erc20.getAddress());
+    expect(await bridge.getInitializedVersion()).to.be.equal("1");
 
     await expect(bridge.__USDCManager_init(await erc20.getAddress(), SECOND.address)).to.be.revertedWith(
       "USDCManager: already initialized",
@@ -86,7 +86,7 @@ describe("USDCHandOver", () => {
 
     bridge = BridgeV2.attach(await bridge.getAddress()) as BridgeV2;
 
-    expect(await bridge.managerAddress()).to.be.equal(SECOND.address);
+    expect(await bridge.getManagerAddress()).to.be.equal(SECOND.address);
 
     const BridgeV3 = await ethers.getContractFactory("BridgeV3");
     const bridgeV3 = await BridgeV3.deploy();
@@ -94,6 +94,6 @@ describe("USDCHandOver", () => {
     initData = bridgeV3.interface.encodeFunctionData("__USDCManager_init", [await erc20.getAddress(), FIRST.address]);
     await bridge.upgradeToWithSigAndCall(await bridgeV3.getAddress(), [], initData);
 
-    expect(await bridge.managerAddress()).to.be.equal(FIRST.address);
+    expect(await bridge.getManagerAddress()).to.be.equal(FIRST.address);
   });
 });
