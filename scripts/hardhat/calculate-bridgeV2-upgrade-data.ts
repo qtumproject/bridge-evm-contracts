@@ -5,7 +5,7 @@ import { BridgeV2__factory } from "@ethers-v6";
 const usdcTokenAddress = process.env.USDC_TOKEN_ADDRESS!;
 const circleTrustedAccount = process.env.CIRCLE_TRUSTED_ACCOUNT!;
 
-if(!ethers.isAddress(usdcTokenAddress!)) {
+if (!ethers.isAddress(usdcTokenAddress!)) {
   throw new Error("Invalid USDC_TOKEN_ADDRESS");
 }
 

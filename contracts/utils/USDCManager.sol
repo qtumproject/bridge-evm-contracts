@@ -75,22 +75,22 @@ contract USDCManager {
     }
 
     /**
-    * @notice Returns the address of the manager.
-    */
+     * @notice Returns the address of the manager.
+     */
     function getManagerAddress() external view returns (address) {
         return _getUSDCManagerStorage().managerAddress;
     }
 
     /**
-    * @notice Returns the address of the locked USDC token.
-    */
+     * @notice Returns the address of the locked USDC token.
+     */
     function getLockedUSDCAddress() external view returns (IUSDCType) {
         return _getUSDCManagerStorage().lockedUSDCAddress;
     }
 
     /**
-    * @notice Returns the initialized version of the contract.
-    */
+     * @notice Returns the initialized version of the contract.
+     */
     function getInitializedVersion() external view returns (uint256) {
         return _getUSDCManagerStorage().initializedVersion;
     }
