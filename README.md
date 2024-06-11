@@ -156,12 +156,19 @@ This step concludes the USDC Hand Over Procedure.
 
 ## Contract Management Methods
 
-All of the functions below share the common argument `bytes[] calldata signatures_`, which is an array of signatures from 
-the signers if required. If the `isSignersMode` flag is set to `true`, the signatures are required. 
-Otherwise, the signatures are not required, and this argument should be an empty array (i.e., `[]`).
+All the functions below should be called directly on the Bridge contract.
 
-For the `pause` and `unpause` methods, if the `pauseManager` address is NOT the zero address, the `pauseManager` address can call these methods. 
-These methods will be restricted only to the `pauseManager` account.
+> To call these function on the Ethereum network the [Remix](https://remix.ethereum.org/) or [Etherscan](https://etherscan.io/) can be used.
+
+> To call these functions on the QTum network the [QTum Web Wallet](https://wallet.bridge.qtum.net/send-to-contract) can be used.
+
+To check the current owner of the Bridge contract, you can call the `owner` method. 
+To verify if the `signersMode` is enabled, use the `isSignersMode` method. 
+Lastly, to check the current `pauseManager` address, call the `pauseManager` method. If the `pauseManager` address is the zero address, the `pauseManager` functionality can only be called by the owner of the Bridge contract.
+
+All the functions below share the common argument `bytes[] calldata signatures_`, which is an array of signatures from the signers if required. If the `isSignersMode` flag is set to `true`, the signatures are required. Otherwise, the signatures are not required, and this argument should be an empty array (i.e., `[]`).
+
+For the `pause` and `unpause` methods, if the `pauseManager` address is NOT the zero address, the `pauseManager` address can call these methods. These methods will be restricted only to the `pauseManager` account.
 
 - `pause(bytes[] calldata signatures_)`: Pauses the contract.
     - `bytes[] calldata signatures_`: The signatures from the signers if required.
