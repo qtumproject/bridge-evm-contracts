@@ -153,3 +153,49 @@ At this point, you have all the details and can successfully upgrade the Bridge 
 After the steps above (pausing and implementation upgrade), the Circle team can proceed with their part of burning the locked USDC tokens.
 
 This step concludes the USDC Hand Over Procedure.
+
+## Contract Management Methods
+
+All of the functions below share the common argument `bytes[] calldata signatures_`, which is an array of signatures from 
+the signers if required. If the `isSignersMode` flag is set to `true`, the signatures are required. 
+Otherwise, the signatures are not required, and this argument should be an empty array (i.e., `[]`).
+
+For the `pause` and `unpause` methods, if the `pauseManager` address is NOT the zero address, the `pauseManager` address can call these methods. 
+These methods will be restricted only to the `pauseManager` account.
+
+- `pause(bytes[] calldata signatures_)`: Pauses the contract.
+    - `bytes[] calldata signatures_`: The signatures from the signers if required.
+    - Requires either the owner, the pause manager, or sufficient signatures depending on the `isSignersMode` flag and the `pauseManager` address.
+
+- `unpause(bytes[] calldata signatures_)`: Unpauses the contract.
+    - `bytes[] calldata signatures_`: The signatures from the signers if required.
+    - Requires either the owner, the pause manager, or sufficient signatures depending on the `isSignersMode` flag and the `pauseManager` address.
+
+- `setPauseManager(address newManager_, bytes[] calldata signatures_)`: Transfers pause management to a new address.
+    - `address newManager_`: The address of the new pause manager. May be set to the zero address.
+    - `bytes[] calldata signatures_`: The signatures from the signers if required.
+
+- `setSignaturesThreshold(uint256 signaturesThreshold_, bytes[] calldata signatures_)`: Sets the threshold of signatures required to authorize a transaction.
+    - `uint256 signaturesThreshold_`: The new signature threshold.
+    - `bytes[] calldata signatures_`: The signatures from the signers if required.
+
+- `addSigners(address[] calldata signers_, bytes[] calldata signatures_)`: Adds new signers.
+    - `address[] calldata signers_`: The new signers to be added.
+    - `bytes[] calldata signatures_`: The signatures from the signers if required.
+
+- `removeSigners(address[] calldata signers_, bytes[] calldata signatures_)`: Removes signers.
+    - `address[] calldata signers_`: The signers to remove.
+    - `bytes[] calldata signatures_`: The signatures from the signers if required.
+
+- `toggleSignersMode(bool isSignersMode_, bytes[] calldata signatures_)`: Toggles the signers mode.
+    - `bool isSignersMode_`: The new signers mode.
+    - `bytes[] calldata signatures_`: The signatures from the signers if required.
+
+- `upgradeToWithSig(address newImplementation_, bytes[] calldata signatures_)`: Upgrades the implementation of the proxy to `newImplementation`.
+    - `address newImplementation_`: The address of the new implementation.
+    - `bytes[] calldata signatures_`: The signatures from the signers if required.
+
+- `upgradeToWithSigAndCall(address newImplementation_, bytes[] calldata signatures_, bytes calldata data_)`: Upgrades the implementation of the proxy to `newImplementation`, and subsequently executes the function call encoded in `data_`.
+    - `address newImplementation_`: The address of the new implementation.
+    - `bytes[] calldata signatures_`: The signatures from the signers if required.
+    - `bytes calldata data_`: The data for the function call to be executed.
