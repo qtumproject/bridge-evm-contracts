@@ -154,13 +154,19 @@ After the steps above (pausing and implementation upgrade), the Circle team can 
 
 This step concludes the USDC Hand Over Procedure.
 
-## Contract Management Methods
+## Bridge Management Methods
+
+### Usage
 
 All the functions below should be called directly on the Bridge contract.
 
 > To call these functions on the Ethereum network the [Remix](https://remix.ethereum.org/) or [Etherscan](https://etherscan.io/) can be used.
 
 > To call these functions on the QTum network the [QTum Web Wallet](https://wallet.bridge.qtum.net/send-to-contract) can be used.
+
+Bridge ABI can be found [here](https://github.com/qtumproject/bridge-evm-contracts/blob/db8288800fab385135af837cd757456b520bb414/abi/Bridge.json)
+
+### Methods
 
 To check the current owner of the Bridge contract, you can call the `owner` method. 
 To verify if the `signersMode` is enabled, use the `isSignersMode` method. 
