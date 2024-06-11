@@ -158,7 +158,7 @@ This step concludes the USDC Hand Over Procedure.
 
 All the functions below should be called directly on the Bridge contract.
 
-> To call these function on the Ethereum network the [Remix](https://remix.ethereum.org/) or [Etherscan](https://etherscan.io/) can be used.
+> To call these functions on the Ethereum network the [Remix](https://remix.ethereum.org/) or [Etherscan](https://etherscan.io/) can be used.
 
 > To call these functions on the QTum network the [QTum Web Wallet](https://wallet.bridge.qtum.net/send-to-contract) can be used.
 
