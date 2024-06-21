@@ -14,6 +14,7 @@ const networkMap: Record<string, any> = {
   "81": qtumDeployment,
   "8889": qtumDeployment,
   "1": ethereumDeployment,
+  "31337": ethereumDeployment,
   "11155111": ethereumDeployment,
 };
 
@@ -54,15 +55,19 @@ async function qtumDeployment(_deployer: Deployer): Promise<[string, string]> {
 
 async function ethereumDeployment(deployer: Deployer): Promise<[string, string]> {
   const bridgeImplementation = await deployer.deploy(Bridge__factory);
-  const proxy = await deployer.deploy(ERC1967Proxy__factory, [
-    await bridgeImplementation.getAddress(),
-    bridgeImplementation.interface.encodeFunctionData("__Bridge_init", [
-      validators,
-      ethers.ZeroAddress,
-      threshold,
-      false,
-    ]),
-  ]);
+  const proxy = await deployer.deploy(
+    ERC1967Proxy__factory,
+    [
+      await bridgeImplementation.getAddress(),
+      bridgeImplementation.interface.encodeFunctionData("__Bridge_init", [
+        validators,
+        ethers.ZeroAddress,
+        threshold,
+        false,
+      ]),
+    ],
+    { name: "Bridge Proxy" },
+  );
 
   const bridge = await deployer.deployed(Bridge__factory, await proxy.getAddress());
 

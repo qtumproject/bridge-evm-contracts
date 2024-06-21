@@ -62,8 +62,6 @@ const config: HardhatUserConfig = {
     apiKey: {
       mainnet: `${process.env.ETHERSCAN_KEY}`,
       sepolia: `${process.env.ETHERSCAN_KEY}`,
-      bsc: `${process.env.BSCSCAN_KEY}`,
-      bscTestnet: `${process.env.BSCSCAN_KEY}`,
     },
   },
   migrate: {
