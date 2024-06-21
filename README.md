@@ -198,7 +198,7 @@ In the `.env` file, you need to add the following parameters:
 After that, you can run the following command to upgrade the Bridge contract to BridgeV2 on the Ethereum Sepolia network:
 
 ```bash
-npx hardhat migrate --network sepolia --from 10
+npx hardhat migrate --network sepolia --from 10 --verify
 ```
 
 If you made a mistake in the variables configuration and migration 11 failed, you can fix those and then only run migration 11.
