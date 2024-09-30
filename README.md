@@ -1,5 +1,11 @@
 # Bridge EVM Contracts
 
+# Audits
+
+- CertiK: https://skynet.certik.com/projects/qtum
+
+> Note: Core contracts have not changed since the audit; only necessary contracts were added to accommodate the [USDC Hand Over Procedure](#usdc-hand-over-procedure).
+
 ## Contract Deployment
 
 Firstly, you need to install the dependencies:
